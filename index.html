@@ -642,7 +642,7 @@ dialog .row{margin-top:18px}
                outbox:[], uid:Math.random().toString(36).slice(2), blocked:new Set() };
   const PFX = 'chatapp-v1-wait-', SLOTS = 3;
   function closeNet(){
-    RT.searching = false;
+    RT.searching = false; clearTimeout(S.callWd);
     for(const x of [RT.call, RT.conn]) try{ x && x.close(); }catch(e){}
     for(const x of [RT.peer, RT.q, RT.room]) try{ x && x.destroy(); }catch(e){}
     Object.assign(RT, { room:null, roomId:null, peer:null, q:null, conn:null, call:null, real:false, started:false, vote:null, partner:null, outbox:[] });
@@ -650,14 +650,52 @@ dialog .row{margin-top:18px}
   }
   const mkPeer = id => new Promise(res => {
     const p = id ? new Peer(id) : new Peer();
-    p.on('open', () => res(p));
-    p.on('error', () => { try{ p.destroy(); }catch(e){} res(null); });
+    let opened = false;
+    p.on('open', () => { opened = true; res(p); });
+    /* Antes de abrir, un error descarta el peer. Después (p. ej. «peer-unavailable» al llamar a una sala
+       que aún no está lista) el peer sigue vivo; si no, se rompía la conexión y se quedaba atascada. */
+    p.on('error', () => { if(!opened){ try{ p.destroy(); }catch(e){} res(null); } });
+    p.on('disconnected', () => setTimeout(revive, 400));
   });
+  /* El servidor de señalización se corta cuando el móvil pasa a segundo plano (p. ej. al compartir por WhatsApp).
+     Reconectamos al volver y mientras se espera. */
+  let reopening = false;
+  function revive(){
+    for(const p of [RT.room, RT.q, RT.peer]) if(p && !p.destroyed && p.disconnected){ try{ p.reconnect(); }catch(e){} }
+    if(RT.searching && RT.roomId && RT.room && RT.room.destroyed && !reopening){
+      reopening = true;
+      mkPeer(ROOM_PFX + RT.roomId).then(p => {
+        reopening = false;
+        if(!p) return;
+        if(!RT.searching || !RT.roomId){ try{ p.destroy(); }catch(e){} return; }
+        RT.room = p; p.on('connection', c => c.on('data', d => onMsg(d, c)));
+      });
+    }
+  }
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') revive(); });
+  window.addEventListener('pageshow', revive);
+  window.addEventListener('focus', revive);
+  window.addEventListener('online', revive);
+  setInterval(() => { if(RT.searching) revive(); }, 3000);
+
+  /* Quien recibe la conexión llama con el vídeo; si la llamada no arranca en 8 s, se reintenta */
+  function callPartner(){
+    if(!RT.conn || RT.call || RT.started) return;
+    const src = [RT.peer, RT.q, RT.room].find(p => p && !p.destroyed && !p.disconnected) || RT.peer || RT.q || RT.room;
+    if(!src) return;
+    RT.real = true;
+    gotCall(src.call(RT.conn.peer, S.out || buildOut()));
+    clearTimeout(S.callWd);
+    S.callWd = setTimeout(() => {
+      if(RT.searching && !RT.started && RT.conn){ try{ RT.call && RT.call.close(); }catch(e){} RT.call = null; callPartner(); }
+    }, 8000);
+  }
   function lost(){ if(RT.started){ toast('La otra persona ha salido'); endCall('early', true); } }
   function onMsg(d, c){
     if(d.t === 'hello'){
       if(RT.conn || RT.blocked.has(d.uid)){ c.send({t:'busy'}); return; }
       RT.conn = c; RT.partner = d.uid; c.on('close', lost); c.send({t:'ok', uid:RT.uid});
+      if(RT.searching) setTimeout(() => { if(RT.conn === c && !RT.call && !RT.started) callPartner(); }, 250);
     } else if(d.t === 'leave'){ lost(); }
     else if(d.t === 'vote'){ RT.vote = d; }
     else if(d.t === 'chat' && typeof d.m === 'string'){ chatRecv(d.m, d.tts !== false, !!d.ai); }
@@ -694,9 +732,13 @@ dialog .row{margin-top:18px}
   }
   function dial(id){
     return new Promise(res => {
-      const c = RT.q.connect(id, {reliable:true}); let fin = false;
-      const done = ok => { if(fin) return; fin = true; clearTimeout(t); if(!ok) try{ c.close(); }catch(e){} res(ok); };
+      const q = RT.q; let c; try{ c = q && !q.destroyed && !q.disconnected ? q.connect(id, {reliable:true}) : null; }catch(e){ c = null; }
+      if(!c){ res(false); return; }
+      let fin = false;
+      const onErr = e => { if(e && e.type === 'peer-unavailable' && String(e.message || '').includes(id)) done(false); };
+      const done = ok => { if(fin) return; fin = true; clearTimeout(t); try{ q.off('error', onErr); }catch(e){} if(!ok) try{ c.close(); }catch(e){} res(ok); };
       const t = setTimeout(() => done(false), 4000);
+      q.on('error', onErr);
       c.on('open', () => c.send({t:'hello', uid:RT.uid}));
       c.on('error', () => done(false));
       c.on('data', d => {
@@ -711,7 +753,7 @@ dialog .row{margin-top:18px}
     RT.q = await mkPeer();
     if(!RT.q){ if(RT.searching){ toast('No se pudo contactar con el servicio de emparejamiento'); cancelWaiting(); } return; }
     RT.q.on('call', c => { c.answer(S.out || buildOut()); gotCall(c); });
-    const answered = () => { if(RT.conn && !RT.call && !RT.started){ RT.real = true; gotCall((RT.peer || RT.q).call(RT.conn.peer, S.out || buildOut())); return true; } return false; };
+    const answered = () => { if(RT.conn && !RT.call && !RT.started){ callPartner(); return true; } return false; };
     while(RT.searching){
       if(answered()) return;
       for(const i of [0,1,2].sort(() => Math.random()-.5)){
@@ -720,7 +762,7 @@ dialog .row{margin-top:18px}
         if(p){
           RT.peer = p; p.on('connection', c => c.on('data', d => onMsg(d, c)));
           for(let t=0; t<30 && RT.searching && !RT.conn; t++) await wait(200);
-          if(RT.conn){ RT.real = true; gotCall(p.call(RT.conn.peer, S.out || buildOut())); return; }
+          if(RT.conn){ callPartner(); return; }
           p.destroy(); RT.peer = null;
         } else if(RT.q && await dial(id)) return;
       }
