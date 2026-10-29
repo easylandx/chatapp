@@ -181,6 +181,21 @@ dialog .row{margin-top:18px}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media (max-width:640px){.rules{grid-template-columns:1fr}.pip{width:34%}.ctl.quiet{margin-left:0}
   header.top{grid-template-columns:auto 1fr}.brand{grid-column:1/-1}.lang{grid-row:2;grid-column:1;justify-self:start}header.top .hright{grid-row:2;grid-column:2}}
+
+/* About popup */
+.aboutBtn{margin-left:10px}
+.ovl{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));background:rgba(11,42,64,.45);backdrop-filter:blur(3px)}
+.ovl.open{display:flex;animation:rise .25s ease both}
+.modal{position:relative;width:min(560px,100%);max-height:100%;overflow-y:auto;background:var(--panel);color:var(--ink);border:1px solid var(--amber-d);border-radius:16px;padding:28px 26px 24px;box-shadow:0 20px 60px rgba(11,42,64,.35)}
+.modal h2{font-family:var(--serif);font-weight:500;font-size:clamp(22px,4.5vw,28px);line-height:1.15;margin:0 34px 16px 0}
+.modal h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 8px}
+.modal ul{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+.modal li{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px}
+.modal p{font-size:14px;margin:0 0 10px}
+.modal p.strong{font-weight:700}
+.modal .mclose{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:inherit;font-size:18px;line-height:1;cursor:pointer}
+.modal .mclose:hover{border-color:var(--dim)}
+.modal .mclose:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
 </style>
 </head>
 <body>
@@ -203,6 +218,7 @@ dialog .row{margin-top:18px}
     <h1>ChatApp<br><em>La nueva forma de chat.</em></h1>
     <div style="margin-top:34px">
       <button class="btn primary" id="connectBtn">Conectar ahora</button>
+      <button class="btn aboutBtn" id="aboutBtn" type="button">Acerca de</button>
     </div>
     <p class="hint hide" id="inviteNote" style="margin-top:14px">Te han invitado a una sala privada · pulsa «Conectar ahora» para entrar.</p>
   </main>
@@ -262,6 +278,29 @@ dialog .row{margin-top:18px}
     </div>
   </main>
 
+</div>
+
+
+<div class="ovl" id="aboutOvl" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <button class="mclose" id="aboutClose" type="button" aria-label="Cerrar">&times;</button>
+    <h2 id="aboutTitle">ChatApp. La nueva forma de chat.</h2>
+    <h3>Funciones</h3>
+    <ul>
+      <li>Videochat instantáneo</li>
+      <li>Enlaces de sala privados</li>
+      <li>Chat de texto</li>
+      <li>Avatar de IA que habla</li>
+      <li>Modo de voz manos libres</li>
+      <li>Avatares con foto personalizada</li>
+      <li>Inglés y español</li>
+    </ul>
+    <p class="strong">Funciona en el navegador.</p>
+    <p>Instalación fácil opcional.</p>
+    <p>En el móvil, añádela a la pantalla de inicio.</p>
+    <p>Funciona como una app de verdad: sin descargas, sin cuenta y sin ocupar espacio.</p>
+    <p>En el ordenador, usa el botón Instalar app de arriba, solo la primera vez.</p>
+  </div>
 </div>
 
 <div class="toast" id="toast" role="status"></div>
@@ -409,6 +448,22 @@ dialog .row{margin-top:18px}
     "Me quedé pensando en lo que contaste. Gracias por la charla. ✦": "I kept thinking about what you shared. Thanks for the chat. ✦",
     "Ha sido un rato muy agradable. Te dejo mi usuario: @charla.pausada": "That was a really pleasant time. Here’s my username: @charla.pausada",
     "Qué bien se ha pasado el tiempo. Escríbeme aquí: hola@ejemplo.com": "Time flew by. Write to me here: hola@ejemplo.com",
+    "Acerca de": "About",
+    "ChatApp. La nueva forma de chat.": "ChatApp. The new way to chat.",
+    "Funciones": "Features",
+    "Videochat instantáneo": "Instant video chat",
+    "Enlaces de sala privados": "Private room links",
+    "Chat de texto": "Text chat",
+    "Avatar de IA que habla": "Talking AI avatar",
+    "Modo de voz manos libres": "Hands free voice mode",
+    "Avatares con foto personalizada": "Custom photo avatars",
+    "Inglés y español": "English & Spanish",
+    "Funciona en el navegador.": "Runs in your browser.",
+    "Instalación fácil opcional.": "Optional Easy Install.",
+    "En el móvil, añádela a la pantalla de inicio.": "On phone, add to home screen.",
+    "Funciona como una app de verdad: sin descargas, sin cuenta y sin ocupar espacio.": "Works like a real app, no download, account or space needed.",
+    "En el ordenador, usa el botón Instalar app de arriba, solo la primera vez.": "On desktop, use the Install app button above, first time only.",
+    "Cerrar": "Close",
   };
   const T = s => (LANG === 'en' && Object.prototype.hasOwnProperty.call(EN, s)) ? EN[s] : s;
   const setT = (el, es) => { el.dataset.es = es; el.textContent = T(es); };
@@ -1402,6 +1457,18 @@ dialog .row{margin-top:18px}
         toast('Para instalar: abre el menú del navegador y elige «Instalar app» o «Añadir a pantalla de inicio»', 6000);
       }
     });
+  })();
+
+  /* About popup */
+  (() => {
+    const ovl = $('#aboutOvl'), openBtn = $('#aboutBtn'), closeBtn = $('#aboutClose');
+    let last = null;
+    const open = () => { last = document.activeElement; ovl.classList.add('open'); ovl.setAttribute('aria-hidden','false'); closeBtn.focus(); };
+    const close = () => { ovl.classList.remove('open'); ovl.setAttribute('aria-hidden','true'); if(last) last.focus(); };
+    openBtn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    ovl.addEventListener('click', e => { if(e.target === ovl) close(); });
+    document.addEventListener('keydown', e => { if(e.key === 'Escape' && ovl.classList.contains('open')) close(); });
   })();
 
   /* Inglés por defecto */
