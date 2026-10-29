@@ -217,10 +217,10 @@ dialog .row{margin-top:18px}
   <main class="screen active" id="landing">
     <h1>ChatApp<br><em>La nueva forma de chat.</em></h1>
     <div style="margin-top:34px">
-      <button class="btn primary" id="connectBtn">Conectar ahora</button>
+      <button class="btn primary" id="connectBtn">Conectar</button>
       <button class="btn aboutBtn" id="aboutBtn" type="button">Acerca de</button>
     </div>
-    <p class="hint hide" id="inviteNote" style="margin-top:14px">Te han invitado a una sala privada · pulsa «Conectar ahora» para entrar.</p>
+    <p class="hint hide" id="inviteNote" style="margin-top:14px">Te han invitado a una sala privada · pulsa «Conectar» para entrar.</p>
   </main>
 
   <!-- 2. CALL (también sirve de sala de espera) -->
@@ -323,7 +323,7 @@ dialog .row{margin-top:18px}
     "La nueva forma de chat.": "The new way to chat.",
     "Buscando a alguien…": "Looking for someone…",
     "Te emparejamos con alguien que también quiere charlar con calma. Una pregunta para arrancar, un reloj amable y toda la atención puesta en la otra persona.": "We match you with someone who also wants to talk without rushing. One question to get started, a friendly clock and all your attention on the other person.",
-    "Conectar ahora": "Connect now",
+    "Conectar": "Connect",
     "Emparejamiento en directo · sin registro": "Live matching · no sign-up",
     "01 · CARA A CARA": "01 · FACE TO FACE",
     "Vídeo desde el primer segundo, con una entrada suave.": "Video from the very first second, with a gentle fade-in.",
@@ -389,7 +389,7 @@ dialog .row{margin-top:18px}
     "Enlace nuevo creado": "New link created",
     "Podrás crear otro enlace cuando termine la llamada": "You can create a new link once the call ends",
     "Enviar por WhatsApp": "Send via WhatsApp",
-    "Te han invitado a una sala privada · pulsa «Conectar ahora» para entrar.": "You’ve been invited to a private room · press “Connect now” to join.",
+    "Te han invitado a una sala privada · pulsa «Conectar» para entrar.": "You’ve been invited to a private room · press “Connect now” to join.",
     "Esperando a que la otra persona abra la sala…": "Waiting for the other person to open the room…",
     "Únete a la charla en ChatApp: ": "Join the chat on ChatApp: ",
     "Escribe un mensaje…": "Type a message…",
@@ -1274,7 +1274,7 @@ dialog .row{margin-top:18px}
       "What would you cook for someone you wanted to impress?", "What's one thing you're looking forward to this month?", "If you could master any skill overnight, what would it be?",
       "I find the best conversations start with small, everyday things.", "I've been walking more lately; it really clears my head.", "Strong coffee and a quiet morning are hard to beat.",
       "I like places where you can hear the rain from inside.", "Learning a new language has been on my list for ages.", "I think curiosity matters more than being right.",
-      "A long train journey is my favourite way to think.", "Cooking for friends is where I feel most relaxed.", "I always feel better after spending time near the water.",
+      "A long journey is my favourite way to think.", "Cooking for friends is where I feel most relaxed.", "I always feel better after spending time near the water.",
       "Old photographs make me wonder about the stories behind them."],
     es: ["¿Qué haces cuando necesitas desconectar de todo?", "¿Qué pequeña cosa te ha hecho sonreír últimamente?", "¿A dónde viajarías ahora si no hubiera límites?",
       "¿Qué música pones cuando quieres concentrarte?", "¿Hay alguna comida que podrías comer cada semana sin aburrirte?", "¿Qué querías ser de pequeño?",
@@ -1284,7 +1284,7 @@ dialog .row{margin-top:18px}
       "¿Qué cocinarías para impresionar a alguien?", "¿Qué es lo que más esperas de este mes?", "Si pudieras dominar una habilidad de la noche a la mañana, ¿cuál sería?",
       "Creo que las mejores conversaciones empiezan con cosas pequeñas del día a día.", "Últimamente camino más y me despeja la cabeza.", "Un buen café y una mañana tranquila son difíciles de superar.",
       "Me gustan los sitios donde se oye la lluvia desde dentro.", "Aprender un idioma nuevo lleva siglos en mi lista.", "Creo que la curiosidad importa más que tener razón.",
-      "Un viaje largo en tren es mi forma favorita de pensar.", "Cocinar para amigos es donde más me relajo.", "Siempre me siento mejor cerca del agua.",
+      "Un viaje largo es mi forma favorita de pensar.", "Cocinar para amigos es donde más me relajo.", "Siempre me siento mejor cerca del agua.",
       "Las fotos antiguas me hacen pensar en las historias que esconden."]
   };
   const isEs = t => /[áéíóúñ¿¡]|\b(hola|que|qué|gracias|pero|como|cómo|muy)\b/i.test(t);
@@ -1297,7 +1297,7 @@ dialog .row{margin-top:18px}
   }
   const PERSONAS = ['a freelance designer who loves cycling and strong coffee', 'a teacher who is learning the guitar', 'a software tester who collects postcards from trips',
     'a chef curious about other cultures', 'a physiotherapist who runs and reads science fiction', 'an architecture student who loves old cities and photography',
-    'a paramedic who unwinds with cooking and podcasts', 'a bookshop owner who gardens and loves train journeys', 'a sound engineer who hikes on weekends', 'a nurse who paints landscapes'];
+    'a paramedic who unwinds with cooking and podcasts', 'a bookshop owner who gardens and loves journeys', 'a sound engineer who hikes on weekends', 'a nurse who paints landscapes'];
   const ANGLES = ['Share a short, specific personal anecdote related to what was said.', 'Ask one curious, specific follow-up question.', 'Give a mild, honest opinion and a reason for it.',
     'Gently steer the chat to a completely new everyday topic with a question.', 'Ask a playful "what if" question.', 'React briefly, then add an unexpected observation.',
     'Compare two things thoughtfully and ask which they prefer.', 'Mention a small plan or wish you have and ask about theirs.'];
