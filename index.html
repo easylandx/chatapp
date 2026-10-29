@@ -182,6 +182,9 @@ dialog .row{margin-top:18px}
 @media (max-width:640px){.rules{grid-template-columns:1fr}.pip{width:34%}.ctl.quiet{margin-left:0}
   header.top{grid-template-columns:auto 1fr}.brand{grid-column:1/-1}.lang{grid-row:2;grid-column:1;justify-self:start}header.top .hright{grid-row:2;grid-column:2}}
 
+/* App icon */
+.appico{display:inline-block;width:1.15em;height:1.15em;margin-right:.3em;vertical-align:-.2em;border-radius:22%;background:url(data:image/png;base64,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) center/cover no-repeat}
+h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
 /* About popup */
 .aboutBtn{margin-left:10px}
 .ovl{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));background:rgba(11,42,64,.45);backdrop-filter:blur(3px)}
@@ -202,7 +205,7 @@ dialog .row{margin-top:18px}
 <div class="shell">
   <header class="top">
     <div class="brand">
-      <div class="logo">Chat<b>App</b><span class="cursor" aria-hidden="true"></span></div>
+      <div class="logo"><span class="appico" aria-hidden="true"></span>Chat<b>App</b><span class="cursor" aria-hidden="true"></span></div>
       <div class="time hide" id="time" role="timer" aria-live="off">00:00</div>
     </div>
     <button class="lang" id="langBtn" data-noi18n lang="en" type="button">English</button>
@@ -215,12 +218,12 @@ dialog .row{margin-top:18px}
 
   <!-- 1. LANDING -->
   <main class="screen active" id="landing">
-    <h1>ChatApp<br><em>La nueva forma de chat.</em></h1>
+    <h1><span class="appico" aria-hidden="true"></span>ChatApp<br><em>La nueva forma de chat.</em></h1>
     <div style="margin-top:34px">
-      <button class="btn primary" id="connectBtn">Conectar</button>
+      <button class="btn primary" id="connectBtn">Conectar ahora</button>
       <button class="btn aboutBtn" id="aboutBtn" type="button">Acerca de</button>
     </div>
-    <p class="hint hide" id="inviteNote" style="margin-top:14px">Te han invitado a una sala privada · pulsa «Conectar» para entrar.</p>
+    <p class="hint hide" id="inviteNote" style="margin-top:14px">Te han invitado a una sala privada · pulsa «Conectar ahora» para entrar.</p>
   </main>
 
   <!-- 2. CALL (también sirve de sala de espera) -->
@@ -323,7 +326,7 @@ dialog .row{margin-top:18px}
     "La nueva forma de chat.": "The new way to chat.",
     "Buscando a alguien…": "Looking for someone…",
     "Te emparejamos con alguien que también quiere charlar con calma. Una pregunta para arrancar, un reloj amable y toda la atención puesta en la otra persona.": "We match you with someone who also wants to talk without rushing. One question to get started, a friendly clock and all your attention on the other person.",
-    "Conectar": "Connect",
+    "Conectar ahora": "Connect now",
     "Emparejamiento en directo · sin registro": "Live matching · no sign-up",
     "01 · CARA A CARA": "01 · FACE TO FACE",
     "Vídeo desde el primer segundo, con una entrada suave.": "Video from the very first second, with a gentle fade-in.",
@@ -389,7 +392,7 @@ dialog .row{margin-top:18px}
     "Enlace nuevo creado": "New link created",
     "Podrás crear otro enlace cuando termine la llamada": "You can create a new link once the call ends",
     "Enviar por WhatsApp": "Send via WhatsApp",
-    "Te han invitado a una sala privada · pulsa «Conectar» para entrar.": "You’ve been invited to a private room · press “Connect now” to join.",
+    "Te han invitado a una sala privada · pulsa «Conectar ahora» para entrar.": "You’ve been invited to a private room · press “Connect now” to join.",
     "Esperando a que la otra persona abra la sala…": "Waiting for the other person to open the room…",
     "Únete a la charla en ChatApp: ": "Join the chat on ChatApp: ",
     "Escribe un mensaje…": "Type a message…",
@@ -1274,7 +1277,7 @@ dialog .row{margin-top:18px}
       "What would you cook for someone you wanted to impress?", "What's one thing you're looking forward to this month?", "If you could master any skill overnight, what would it be?",
       "I find the best conversations start with small, everyday things.", "I've been walking more lately; it really clears my head.", "Strong coffee and a quiet morning are hard to beat.",
       "I like places where you can hear the rain from inside.", "Learning a new language has been on my list for ages.", "I think curiosity matters more than being right.",
-      "A long journey is my favourite way to think.", "Cooking for friends is where I feel most relaxed.", "I always feel better after spending time near the water.",
+      "A long train journey is my favourite way to think.", "Cooking for friends is where I feel most relaxed.", "I always feel better after spending time near the water.",
       "Old photographs make me wonder about the stories behind them."],
     es: ["¿Qué haces cuando necesitas desconectar de todo?", "¿Qué pequeña cosa te ha hecho sonreír últimamente?", "¿A dónde viajarías ahora si no hubiera límites?",
       "¿Qué música pones cuando quieres concentrarte?", "¿Hay alguna comida que podrías comer cada semana sin aburrirte?", "¿Qué querías ser de pequeño?",
@@ -1284,7 +1287,7 @@ dialog .row{margin-top:18px}
       "¿Qué cocinarías para impresionar a alguien?", "¿Qué es lo que más esperas de este mes?", "Si pudieras dominar una habilidad de la noche a la mañana, ¿cuál sería?",
       "Creo que las mejores conversaciones empiezan con cosas pequeñas del día a día.", "Últimamente camino más y me despeja la cabeza.", "Un buen café y una mañana tranquila son difíciles de superar.",
       "Me gustan los sitios donde se oye la lluvia desde dentro.", "Aprender un idioma nuevo lleva siglos en mi lista.", "Creo que la curiosidad importa más que tener razón.",
-      "Un viaje largo es mi forma favorita de pensar.", "Cocinar para amigos es donde más me relajo.", "Siempre me siento mejor cerca del agua.",
+      "Un viaje largo en tren es mi forma favorita de pensar.", "Cocinar para amigos es donde más me relajo.", "Siempre me siento mejor cerca del agua.",
       "Las fotos antiguas me hacen pensar en las historias que esconden."]
   };
   const isEs = t => /[áéíóúñ¿¡]|\b(hola|que|qué|gracias|pero|como|cómo|muy)\b/i.test(t);
@@ -1297,7 +1300,7 @@ dialog .row{margin-top:18px}
   }
   const PERSONAS = ['a freelance designer who loves cycling and strong coffee', 'a teacher who is learning the guitar', 'a software tester who collects postcards from trips',
     'a chef curious about other cultures', 'a physiotherapist who runs and reads science fiction', 'an architecture student who loves old cities and photography',
-    'a paramedic who unwinds with cooking and podcasts', 'a bookshop owner who gardens and loves journeys', 'a sound engineer who hikes on weekends', 'a nurse who paints landscapes'];
+    'a paramedic who unwinds with cooking and podcasts', 'a bookshop owner who gardens and loves train journeys', 'a sound engineer who hikes on weekends', 'a nurse who paints landscapes'];
   const ANGLES = ['Share a short, specific personal anecdote related to what was said.', 'Ask one curious, specific follow-up question.', 'Give a mild, honest opinion and a reason for it.',
     'Gently steer the chat to a completely new everyday topic with a question.', 'Ask a playful "what if" question.', 'React briefly, then add an unexpected observation.',
     'Compare two things thoughtfully and ask which they prefer.', 'Mention a small plan or wish you have and ask about theirs.'];
