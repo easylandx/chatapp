@@ -149,10 +149,7 @@ a.btn{display:inline-block;text-align:center;text-decoration:none}
 .msg.them{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:3px}
 .msg.sys{align-self:center;color:var(--dim);font-size:12px;text-align:center;padding:2px 6px}
 .msg.ai::before{content:"🤖 "}
-#aiBtn[aria-pressed="true"],#trBtn[aria-pressed="true"]{background:var(--amber);color:#0b2a40;font-weight:700}
-/* Traducción en vivo */
-.msg .tr{margin-top:5px;padding-top:5px;border-top:1px dashed var(--line);font-size:12px;font-style:italic;color:var(--dim)}
-.msg.me .tr{color:#1d5a80;border-top-color:rgba(11,42,64,.25)}
+#aiBtn[aria-pressed="true"]{background:var(--amber);color:#0b2a40;font-weight:700}
 /* Ruleta de retos */
 .wheelm{text-align:center;width:min(380px,100%)}
 .wheelbox{position:relative;width:300px;max-width:100%;margin:4px auto 14px}
@@ -286,7 +283,6 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         <button class="ctl" id="avatarBtn" type="button" data-es="Subir avatar">Subir avatar</button>
         <button class="ctl hide" id="avatarRm" type="button" data-es="Quitar avatar">Quitar avatar</button>
         <input type="file" id="avatarFile" accept="image/*" hidden>
-        <button class="ctl" id="trBtn" type="button" aria-pressed="false" title="Cada mensaje de la otra persona llega también traducido a tu idioma.">Traducción en vivo</button>
         <button class="ctl" id="wheelBtn" type="button">Ruleta de retos</button>
         <button class="ctl" id="compBtn" type="button">Compatibilímetro</button>
         <button class="ctl quiet" id="resetBtn" type="button" data-es="Reiniciar">Reiniciar</button>
@@ -338,7 +334,6 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       <li>Avatar de IA que habla</li>
       <li>Modo de voz manos libres</li>
       <li>Avatares con foto personalizada</li>
-      <li>Traducción en vivo</li>
       <li>Ruleta de retos</li>
       <li>Compatibilímetro</li>
       <li>Inglés y español</li>
@@ -512,10 +507,6 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Funciona como una app de verdad: sin descargas, sin cuenta y sin ocupar espacio.": "Works like a real app, no download, account or space needed.",
     "En el ordenador, usa el botón Instalar app de arriba, solo la primera vez.": "On desktop, use the Install app button above, first time only.",
     "Cerrar": "Close",
-    "Traducción en vivo": "Live translation",
-    "Cada mensaje de la otra persona llega también traducido a tu idioma.": "Every message from the other person also arrives translated into your language.",
-    "Traducción activada · los mensajes llegan en tu idioma": "Translation on · messages arrive in your language",
-    "Traducción en pausa": "Translation paused",
     "Ruleta de retos": "Challenge wheel",
     "Girar": "Spin",
     "Gira la ruleta y el reto es para las dos personas.": "Spin the wheel and the challenge is for both of you.",
@@ -1170,13 +1161,11 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   const RV = { talkUntil:0, typeUntil:0 };   /* estado del avatar remoto «Chat AI» */
   const SP = { on:false, busy:false, t:null, hist:[], persona:null, angle:null, run:0 };
   const AI = { on:false, busy:false, t:null, n:0, run:0, seq:0, hist:[], persona:null, angle:null };
-  const TR = { on:false };
   function chatPush(cls, text, tr, ai){
     const box = $('#msgs'), d = document.createElement('div'); d.className = 'msg ' + cls + (ai ? ' ai' : '');
     if(tr) setT(d, text); else { d.textContent = text; d.setAttribute('data-noi18n',''); }
     if(cls === 'me' || cls === 'them') d.dataset.src = text;
     box.appendChild(d); box.scrollTop = box.scrollHeight;
-    if(cls === 'them' && TR.on && !tr && !SP.on) trTranslate(d, text);
     if(cls === 'me' || cls === 'them'){ AI.seq++; AI.hist.push([cls === 'me' ? 'assistant' : 'user', text]); if(AI.hist.length > 30) AI.hist.shift(); }
     if(cls === 'them') aiIncoming();
     return d;
@@ -1468,26 +1457,6 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     if(AI.seq !== q){ simKick(600); return; }   /* llegó otro mensaje mientras pensaba */
     if(t){ const wait = Math.max(0, SP.minAt - performance.now()); if(wait) await new Promise(r => setTimeout(r, wait)); if(SP.on && inCall() && AI.seq === q) simSay(t); else if(SP.on) simKick(600); }
   }
-
-  /* ---------- Traducción en vivo: cada mensaje recibido llega también en tu idioma ---------- */
-  async function trTranslate(el, text){
-    const target = LANG === 'en' ? 'English' : 'Spanish (Spain)';
-    const sys = 'You are a translator. Translate the user message into ' + target + '. Reply with ONLY the translation, without quotes or notes. If the message is already written in ' + target + ', reply with the same text unchanged.';
-    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 7000);
-    try{
-      const r = await fetch(AI_ENDPOINT, { method:'POST', headers:{ 'Content-Type':'application/json' }, signal:ctl.signal,
-        body:JSON.stringify({ model:'openai', messages:[{ role:'system', content:sys }, { role:'user', content:text }], temperature:.2, seed:Math.floor(Math.random() * 1e6), max_tokens:200 }) });
-      const t = String((await r.json()).choices[0].message.content || '').trim().replace(/^["“«]+|["”»]+$/g, '');
-      if(!t || t.length > 600 || similar(t, text) || !el.isConnected || el.querySelector('.tr')) return;
-      const d = document.createElement('div'); d.className = 'tr'; d.setAttribute('data-noi18n', ''); d.textContent = '🌐 ' + t;
-      el.appendChild(d); const box = $('#msgs'); box.scrollTop = box.scrollHeight;
-    }catch(e){} finally { clearTimeout(to); }
-  }
-  $('#trBtn').addEventListener('click', () => {
-    TR.on = !TR.on; $('#trBtn').setAttribute('aria-pressed', TR.on);
-    toast(TR.on ? 'Traducción activada · los mensajes llegan en tu idioma' : 'Traducción en pausa');
-    if(TR.on && !SP.on) document.querySelectorAll('#msgs .msg.them').forEach(el => { if(el.dataset.src && !el.querySelector('.tr')) trTranslate(el, el.dataset.src); });
-  });
 
   /* ---------- Ventanas emergentes (ruleta y compatibilímetro) ---------- */
   const ovlOpen = o => { o.classList.add('open'); o.setAttribute('aria-hidden', 'false'); };
