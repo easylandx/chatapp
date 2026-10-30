@@ -112,6 +112,31 @@ h1 em{font-style:italic;color:var(--accent-ink)}
 .pip{position:absolute;right:12px;bottom:12px;width:30%;max-width:200px;aspect-ratio:3/4;border:1px solid var(--amber-d);border-radius:10px;overflow:hidden;background:#d9eefb}
 .pip video{width:100%;height:100%;object-fit:contain;transform:scaleX(-1)}
 .pip .off{position:absolute;inset:0;display:none;place-items:center;font-size:11px;color:var(--dim);text-align:center;padding:6px;background:#d9eefb}
+/* Same-Bench Horizon: two cameras share one continuous horizontal plane */
+.stage.same-bench{
+  --sh:clamp(230px,42vw,390px);
+  width:min(100%,760px);height:var(--sh);aspect-ratio:16/9;
+  border-radius:16px;background:#cfe8f8;
+}
+.stage.same-bench #remote,
+.stage.same-bench #remoteVid{
+  position:absolute;left:0;top:0;width:50%;height:100%;
+  object-fit:cover;background:#cfe8f8;border:0;
+}
+.stage.same-bench #remote{display:block}
+.stage.same-bench #remoteVid{left:0;width:50%;}
+.stage.same-bench .pip{
+  left:50%;right:auto;top:0;bottom:0;width:50%;max-width:none;
+  height:100%;aspect-ratio:auto;border:0;border-left:2px solid rgba(255,255,255,.9);
+  border-radius:0;background:#d9eefb;
+}
+.stage.same-bench .pip video{object-fit:cover;transform:scaleX(-1)}
+.stage.same-bench .pip .off{font-size:clamp(11px,1.5vw,15px)}
+.stage.same-bench .tag{z-index:3}
+@media(max-width:640px){
+  .stage.same-bench{width:100%;height:clamp(210px,58vw,310px);--sh:clamp(210px,58vw,310px)}
+  .stage.same-bench .cue{font-size:11px;padding:7px 11px}
+}
 .pip.nocam .off{display:grid}
 .cue{position:absolute;left:50%;top:14px;transform:translate(-50%,-140%);background:var(--panel2);border:1px solid var(--amber-d);color:var(--ink);padding:8px 18px;border-radius:999px;font-size:13px;transition:transform .4s;white-space:nowrap}
 .cue.show{transform:translate(-50%,0)}
@@ -216,14 +241,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
 .modal .mclose{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:inherit;font-size:18px;line-height:1;cursor:pointer}
 .modal .mclose:hover{border-color:var(--dim)}
 .modal .mclose:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
-.waiting .controls #telBtn,.waiting .controls #pianoBtn,.waiting .controls #cardBtn,.waiting .controls #benchBtn,.waiting .controls #sceneBtn{display:none}
-/* Banco compartido */
-#bench{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:2}
-.stage .cue,.stage .silence,.stage .waitov{z-index:3}
-.stage.bench{height:auto;width:100%;aspect-ratio:16/9}
-.stage.bench .pip{opacity:0;pointer-events:none}
-.callgrid.bench{grid-template-columns:1fr}
-.callgrid.bench .chatwrap{height:260px;min-height:0}
+.waiting .controls #telBtn,.waiting .controls #pianoBtn,.waiting .controls #cardBtn{display:none}
 /* Telepatía + Dúo musical */
 .telm,.pianom{text-align:center;width:min(420px,100%)}
 .telgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 14px}
@@ -279,7 +297,6 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       <div class="stagecol">
       <div class="stage">
         <canvas id="remote" width="600" height="800"></canvas>
-        <canvas id="bench" class="hide" width="1280" height="720" role="img" aria-label="Banco compartido"></canvas>
         <video id="remoteVid" class="hide" autoplay playsinline muted></video>
         <audio id="remoteAud" autoplay playsinline style="display:none"></audio>
         <div class="tag" id="tag"></div>
@@ -309,6 +326,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       <div class="controls">
         <button class="ctl" id="micBtn" aria-pressed="false">Micrófono activo</button>
         <button class="ctl" id="camBtn" aria-pressed="false">Cámara activa</button>
+        <button class="ctl" id="benchBtn" type="button" aria-pressed="false" data-es="Modo Same-Bench">Modo Same-Bench</button>
         <button class="ctl" id="aiBtn" aria-pressed="false" title="La IA chatea por ti. Si las dos personas la activan, las IA hablan entre sí.">Modo IA: no</button>
         <button class="ctl" id="avatarBtn" type="button" data-es="Subir avatar">Subir avatar</button>
         <button class="ctl hide" id="avatarRm" type="button" data-es="Quitar avatar">Quitar avatar</button>
@@ -318,8 +336,6 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         <button class="ctl" id="telBtn" type="button">Telepatía</button>
         <button class="ctl" id="pianoBtn" type="button">Dúo musical</button>
         <button class="ctl" id="cardBtn" type="button">Postal de recuerdo</button>
-        <button class="ctl" id="benchBtn" type="button" aria-pressed="false" data-es="Banco compartido">Banco compartido</button>
-        <button class="ctl hide" id="sceneBtn" type="button" data-es="Escena: Parque">Escena: Parque</button>
         <button class="ctl quiet" id="resetBtn" type="button" data-es="Reiniciar">Reiniciar</button>
       </div>
       <div class="invite hide" id="invite">
@@ -400,6 +416,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     <h3>Funciones</h3>
     <ul>
       <li>Videochat instantáneo</li>
+      <li>Vista horizontal Same-Bench</li>
       <li>Enlaces de sala privados</li>
       <li>Chat de texto</li>
       <li>Avatar de IA que habla</li>
@@ -410,7 +427,6 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       <li>Telepatía en directo</li>
       <li>Piano a dúo</li>
       <li>Postales de recuerdo</li>
-      <li>Banco compartido</li>
       <li>Inglés y español</li>
     </ul>
     <p class="strong">Funciona en el navegador.</p>
@@ -527,6 +543,8 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Micrófono activo": "Microphone on",
     "Micrófono en pausa": "Microphone paused",
     "Cámara activa": "Camera on",
+    "Modo Same-Bench": "Same-Bench view",
+    "Modo normal": "Standard view",
     "Modo IA: sí": "AI mode: on",
     "Modo IA: no": "AI mode: off",
     "La IA chatea por ti. Si las dos personas la activan, las IA hablan entre sí.": "The AI chats for you. If both people turn it on, the two AIs talk to each other.",
@@ -618,10 +636,6 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Postal guardada": "Postcard saved",
     "No se pudo crear la postal": "Couldn’t create the postcard",
     "juntos": "together",
-    "Banco compartido": "Shared bench", "Escena: Parque": "Scene: Park", "Escena: Cabina": "Scene: Booth",
-    "Preparando el banco…": "Setting up the bench…",
-    "No se pudo cargar el modo banco": "Couldn’t load bench mode",
-    "Mira a tu izquierda: ahí está la otra persona": "Look to your left: that’s the other person",
     "Mentes conectadas": "Minds connected", "Casi telepatía": "Almost telepathy", "Chispa de sintonía": "Spark of sync", "Mundos paralelos": "Parallel worlds",
   };
   const T = s => (LANG === 'en' && Object.prototype.hasOwnProperty.call(EN, s)) ? EN[s] : s;
@@ -749,12 +763,12 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   const AV = { typeUntil:0, talkUntil:0 };
   function avatarTalk(text){ AV.talkUntil = performance.now() + Math.min(20000, 600 + String(text).length * 62); }
   /* Avatar animado compartido: cámara local (sin cámara) y la persona «Chat AI» */
-  function avatarPainter(st, bare){
+  function avatarPainter(st){
     const W = 480, H = 640;
     let blinkAt = performance.now() + 2200, blinkUntil = 0, mouth = 0;
     /* Avatar con foto subida: fondo difuminado + foto entera; rebota suavemente al hablar */
     const paintPhoto = (x, img, t, talking, typing, m) => {
-      if(!bare) x.drawImage(img.bg, 0, 0, W, H);
+      x.drawImage(img.bg, 0, 0, W, H);
       const sc = 1 + Math.sin(t*1.2)*.004 + (talking ? .02*m : 0);
       const dy = Math.sin(t*1.6)*3 - (talking ? 5*m : 0);
       x.save(); x.translate(W/2, H/2 + dy); x.scale(sc, sc); x.drawImage(img.main, -W/2, -H/2); x.restore();
@@ -768,12 +782,9 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     return x => {
       const now = performance.now(), t = now/1000;
       const talking = now < st.talkUntil, typing = now < st.typeUntil;
-      if(bare) x.clearRect(0, 0, W, H);
-      else {
-        const bg = x.createRadialGradient(W/2, H*.45, 20, W/2, H*.5, W*.6);
-        bg.addColorStop(0, '#d6efff'); bg.addColorStop(1, '#d9eefb');
-        x.fillStyle = bg; x.fillRect(0, 0, W, H);
-      }
+      const bg = x.createRadialGradient(W/2, H*.45, 20, W/2, H*.5, W*.6);
+      bg.addColorStop(0, '#d6efff'); bg.addColorStop(1, '#d9eefb');
+      x.fillStyle = bg; x.fillRect(0, 0, W, H);
       let target = 0;
       if(talking) target = .25 + .75 * Math.abs(Math.sin(t*13)) * (.6 + .4*Math.sin(t*4.1 + 1));
       else if(typing) target = .08 + .12 * Math.abs(Math.sin(t*9));
@@ -1569,7 +1580,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   });
   const OVLS = '#wheelOvl.open,#compOvl.open,#telOvl.open,#pianoOvl.open,#cardOvl.open';
   document.addEventListener('keydown', e => { if(e.key === 'Escape') document.querySelectorAll(OVLS).forEach(ovlClose); });
-  setInterval(() => { if(!$('#call').classList.contains('active') || S.waiting){ document.querySelectorAll(OVLS).forEach(ovlClose); telReset(); benchOff(); } }, 500);
+  setInterval(() => { if(!$('#call').classList.contains('active') || S.waiting){ document.querySelectorAll(OVLS).forEach(ovlClose); telReset(); } }, 500);
 
   /* ---------- Ruleta de retos: gira para las dos personas, cada una lo ve en su idioma ---------- */
   const WH = { rot:0, i:-1, spinning:false, bag:[] };
@@ -1924,6 +1935,15 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     resetT = setTimeout(resetDisarm, 3000);
   });
   $('#micBtn').addEventListener('click', e => { S.micOn=!S.micOn; if(S.stream) S.stream.getAudioTracks().forEach(t=>t.enabled=S.micOn); e.target.setAttribute('aria-pressed', !S.micOn); setT(e.target, S.micOn?'Micrófono activo':'Micrófono en pausa'); });
+  $('#benchBtn').addEventListener('click', e => {
+    const stage = $('.stage');
+    const enabled = !stage.classList.contains('same-bench');
+    stage.classList.toggle('same-bench', enabled);
+    e.currentTarget.setAttribute('aria-pressed', String(enabled));
+    setT(e.currentTarget, enabled ? 'Modo normal' : 'Modo Same-Bench');
+    toast(enabled ? 'Vista horizontal activada · lado a lado' : 'Vista estándar activada');
+  });
+
   $('#camBtn').addEventListener('click', e => {
     S.camOn=!S.camOn; e.target.setAttribute('aria-pressed', !S.camOn); setT(e.target, S.camOn?'Cámara activa':'Cámara en pausa');
     if(S.stream) S.stream.getVideoTracks().forEach(t=>t.enabled=S.camOn);
