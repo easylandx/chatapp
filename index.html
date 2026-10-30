@@ -96,7 +96,7 @@ h1 em{font-style:italic;color:var(--accent-ink)}
 .waitov{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:16px;background:rgba(234,246,255,.9);backdrop-filter:blur(3px)}
 .waitov.on{display:grid}
 .waitov .match-msg{font-size:clamp(18px,3vw,24px)}
-.waiting .controls #silenceBtn,.waiting .controls #reportBtn,.waiting .callbar .demo{display:none}
+.waiting .controls #silenceBtn,.waiting .controls #reportBtn,.waiting .controls #wheelBtn,.waiting .controls #compBtn,.waiting .callbar .demo{display:none}
 .waiting .time,.time.wt{color:var(--dim);text-shadow:none}
 
 /* call */
@@ -149,7 +149,27 @@ a.btn{display:inline-block;text-align:center;text-decoration:none}
 .msg.them{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:3px}
 .msg.sys{align-self:center;color:var(--dim);font-size:12px;text-align:center;padding:2px 6px}
 .msg.ai::before{content:"🤖 "}
-#aiBtn[aria-pressed="true"]{background:var(--amber);color:#0b2a40;font-weight:700}
+#aiBtn[aria-pressed="true"],#trBtn[aria-pressed="true"]{background:var(--amber);color:#0b2a40;font-weight:700}
+/* Traducción en vivo */
+.msg .tr{margin-top:5px;padding-top:5px;border-top:1px dashed var(--line);font-size:12px;font-style:italic;color:var(--dim)}
+.msg.me .tr{color:#1d5a80;border-top-color:rgba(11,42,64,.25)}
+/* Ruleta de retos */
+.wheelm{text-align:center;width:min(380px,100%)}
+.wheelbox{position:relative;width:300px;max-width:100%;margin:4px auto 14px}
+.wheelbox canvas{width:100%;height:auto;display:block}
+.wpoint{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:24px solid var(--accent-ink);z-index:2;filter:drop-shadow(0 2px 3px rgba(11,42,64,.3))}
+.modal p.wres{min-height:3.4em;font-family:var(--serif);font-size:19px;line-height:1.3;margin:0 0 14px}
+.wheelm .btn:disabled{opacity:.6;cursor:default;animation:none}
+/* Compatibilímetro */
+.compm{text-align:center;width:min(420px,100%)}
+.gauge{width:150px;height:150px;border-radius:50%;margin:4px auto 14px;display:grid;place-items:center;background:conic-gradient(var(--amber-d) calc(var(--p,0)*1%),var(--panel2) 0)}
+.gauge b{width:118px;height:118px;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-family:var(--serif);font-size:34px;font-weight:500}
+.modal p.ctitle{font-family:var(--serif);font-size:21px;margin:0 0 14px}
+.cbars{text-align:left;margin-bottom:12px}
+.crow{display:grid;grid-template-columns:130px 1fr;gap:10px;align-items:center;font-size:12.5px;margin-bottom:7px}
+.cbar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden}
+.cbar i{display:block;height:100%;background:var(--amber-d);border-radius:99px;transition:width .8s ease}
+.modal p.cshared{color:var(--dim);font-size:13px;margin:0 0 14px}
 .chatform{display:flex;gap:8px;padding:10px;border-top:1px dashed var(--line)}
 .chatform input{margin-top:0;flex:1;min-width:0;padding:10px 12px;font-size:14px}
 .chatform .ctl{padding:10px 16px}
@@ -266,6 +286,9 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         <button class="ctl" id="avatarBtn" type="button" data-es="Subir avatar">Subir avatar</button>
         <button class="ctl hide" id="avatarRm" type="button" data-es="Quitar avatar">Quitar avatar</button>
         <input type="file" id="avatarFile" accept="image/*" hidden>
+        <button class="ctl" id="trBtn" type="button" aria-pressed="false" title="Cada mensaje de la otra persona llega también traducido a tu idioma.">Traducción en vivo</button>
+        <button class="ctl" id="wheelBtn" type="button">Ruleta de retos</button>
+        <button class="ctl" id="compBtn" type="button">Compatibilímetro</button>
         <button class="ctl quiet" id="resetBtn" type="button" data-es="Reiniciar">Reiniciar</button>
       </div>
       <div class="invite hide" id="invite">
@@ -284,6 +307,25 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
 </div>
 
 
+<div class="ovl" id="wheelOvl" aria-hidden="true">
+  <div class="modal wheelm" role="dialog" aria-modal="true" aria-labelledby="wheelTitle">
+    <button class="mclose" id="wheelClose" type="button" aria-label="Cerrar">&times;</button>
+    <h2 id="wheelTitle">Ruleta de retos</h2>
+    <div class="wheelbox"><div class="wpoint" aria-hidden="true"></div><canvas id="wheelCv" width="300" height="300" aria-hidden="true"></canvas></div>
+    <p class="wres" id="wheelRes" aria-live="polite" data-noi18n></p>
+    <button class="btn primary" id="wheelSpin" type="button">Girar</button>
+  </div>
+</div>
+
+<div class="ovl" id="compOvl" aria-hidden="true">
+  <div class="modal compm" role="dialog" aria-modal="true" aria-labelledby="compTitle">
+    <button class="mclose" id="compClose" type="button" aria-label="Cerrar">&times;</button>
+    <h2 id="compTitle">Compatibilímetro</h2>
+    <div id="compBody" data-noi18n></div>
+    <button class="btn primary" id="compSend" type="button">Enviar al chat</button>
+  </div>
+</div>
+
 <div class="ovl" id="aboutOvl" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
     <button class="mclose" id="aboutClose" type="button" aria-label="Cerrar">&times;</button>
@@ -296,6 +338,9 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       <li>Avatar de IA que habla</li>
       <li>Modo de voz manos libres</li>
       <li>Avatares con foto personalizada</li>
+      <li>Traducción en vivo</li>
+      <li>Ruleta de retos</li>
+      <li>Compatibilímetro</li>
       <li>Inglés y español</li>
     </ul>
     <p class="strong">Funciona en el navegador.</p>
@@ -467,6 +512,29 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Funciona como una app de verdad: sin descargas, sin cuenta y sin ocupar espacio.": "Works like a real app, no download, account or space needed.",
     "En el ordenador, usa el botón Instalar app de arriba, solo la primera vez.": "On desktop, use the Install app button above, first time only.",
     "Cerrar": "Close",
+    "Traducción en vivo": "Live translation",
+    "Cada mensaje de la otra persona llega también traducido a tu idioma.": "Every message from the other person also arrives translated into your language.",
+    "Traducción activada · los mensajes llegan en tu idioma": "Translation on · messages arrive in your language",
+    "Traducción en pausa": "Translation paused",
+    "Ruleta de retos": "Challenge wheel",
+    "Girar": "Spin",
+    "Gira la ruleta y el reto es para las dos personas.": "Spin the wheel and the challenge is for both of you.",
+    "Compatibilímetro": "Compatibility meter",
+    "Enviar al chat": "Send to chat",
+    "Charlad un poco más y el compatibilímetro tendrá mucho que decir ✨": "Chat a little more and the compatibility meter will have plenty to say ✨",
+    "Equilibrio de charla": "Chat balance",
+    "Sintonía de palabras": "Word harmony",
+    "Buen rollo": "Good vibes",
+    "Curiosidad": "Curiosity",
+    "Tiempo juntos": "Time together",
+    "Palabras que compartís: ": "Words you share: ",
+    "Seguid charlando: las palabras en común llegan enseguida": "Keep chatting: shared words show up quickly",
+    "Almas gemelas del café": "Coffee soulmates",
+    "Dúo dinámico": "Dynamic duo",
+    "Pareja de baile perfecta": "Perfect dance partners",
+    "Equipo de pizza compartida": "Shared-pizza team",
+    "Amigos en construcción": "Friends in the making",
+    "Exploradores recién llegados": "Fresh explorers",
   };
   const T = s => (LANG === 'en' && Object.prototype.hasOwnProperty.call(EN, s)) ? EN[s] : s;
   const setT = (el, es) => { el.dataset.es = es; el.textContent = T(es); };
@@ -509,7 +577,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     document.title = T(TITLE_ES); META.content = T(META_ES);
     applyStatic();
     document.querySelectorAll('[data-es]').forEach(el => { el.textContent = T(el.dataset.es); });
-    renderDone(); updateWa(); voiceLabel();
+    renderDone(); updateWa(); voiceLabel(); wheelRes(); compRender(false);
     const b = $('#langBtn');
     b.textContent = LANG === 'en' ? 'Espa\u00f1ol' : 'English';
     b.lang = LANG === 'en' ? 'es' : 'en';
@@ -864,6 +932,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       if(RT.searching) setTimeout(() => { if(RT.conn === c && !RT.call && !RT.started) callPartner(); }, 250);
     } else if(d.t === 'leave'){ lost(); }
     else if(d.t === 'vote'){ RT.vote = d; }
+    else if(d.t === 'wheel' && Number.isInteger(d.i) && d.i >= 0 && d.i < 12){ wheelRecv(d.i); }
     else if(d.t === 'chat' && typeof d.m === 'string'){ chatRecv(d.m, d.tts !== false, !!d.ai); }
   }
   function gotCall(c){
@@ -1101,10 +1170,13 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   const RV = { talkUntil:0, typeUntil:0 };   /* estado del avatar remoto «Chat AI» */
   const SP = { on:false, busy:false, t:null, hist:[], persona:null, angle:null, run:0 };
   const AI = { on:false, busy:false, t:null, n:0, run:0, seq:0, hist:[], persona:null, angle:null };
+  const TR = { on:false };
   function chatPush(cls, text, tr, ai){
     const box = $('#msgs'), d = document.createElement('div'); d.className = 'msg ' + cls + (ai ? ' ai' : '');
     if(tr) setT(d, text); else { d.textContent = text; d.setAttribute('data-noi18n',''); }
+    if(cls === 'me' || cls === 'them') d.dataset.src = text;
     box.appendChild(d); box.scrollTop = box.scrollHeight;
+    if(cls === 'them' && TR.on && !tr && !SP.on) trTranslate(d, text);
     if(cls === 'me' || cls === 'them'){ AI.seq++; AI.hist.push([cls === 'me' ? 'assistant' : 'user', text]); if(AI.hist.length > 30) AI.hist.shift(); }
     if(cls === 'them') aiIncoming();
     return d;
@@ -1396,6 +1468,151 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     if(AI.seq !== q){ simKick(600); return; }   /* llegó otro mensaje mientras pensaba */
     if(t){ const wait = Math.max(0, SP.minAt - performance.now()); if(wait) await new Promise(r => setTimeout(r, wait)); if(SP.on && inCall() && AI.seq === q) simSay(t); else if(SP.on) simKick(600); }
   }
+
+  /* ---------- Traducción en vivo: cada mensaje recibido llega también en tu idioma ---------- */
+  async function trTranslate(el, text){
+    const target = LANG === 'en' ? 'English' : 'Spanish (Spain)';
+    const sys = 'You are a translator. Translate the user message into ' + target + '. Reply with ONLY the translation, without quotes or notes. If the message is already written in ' + target + ', reply with the same text unchanged.';
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 7000);
+    try{
+      const r = await fetch(AI_ENDPOINT, { method:'POST', headers:{ 'Content-Type':'application/json' }, signal:ctl.signal,
+        body:JSON.stringify({ model:'openai', messages:[{ role:'system', content:sys }, { role:'user', content:text }], temperature:.2, seed:Math.floor(Math.random() * 1e6), max_tokens:200 }) });
+      const t = String((await r.json()).choices[0].message.content || '').trim().replace(/^["“«]+|["”»]+$/g, '');
+      if(!t || t.length > 600 || similar(t, text) || !el.isConnected || el.querySelector('.tr')) return;
+      const d = document.createElement('div'); d.className = 'tr'; d.setAttribute('data-noi18n', ''); d.textContent = '🌐 ' + t;
+      el.appendChild(d); const box = $('#msgs'); box.scrollTop = box.scrollHeight;
+    }catch(e){} finally { clearTimeout(to); }
+  }
+  $('#trBtn').addEventListener('click', () => {
+    TR.on = !TR.on; $('#trBtn').setAttribute('aria-pressed', TR.on);
+    toast(TR.on ? 'Traducción activada · los mensajes llegan en tu idioma' : 'Traducción en pausa');
+    if(TR.on && !SP.on) document.querySelectorAll('#msgs .msg.them').forEach(el => { if(el.dataset.src && !el.querySelector('.tr')) trTranslate(el, el.dataset.src); });
+  });
+
+  /* ---------- Ventanas emergentes (ruleta y compatibilímetro) ---------- */
+  const ovlOpen = o => { o.classList.add('open'); o.setAttribute('aria-hidden', 'false'); };
+  const ovlClose = o => { o.classList.remove('open'); o.setAttribute('aria-hidden', 'true'); };
+  [['#wheelOvl', '#wheelClose'], ['#compOvl', '#compClose']].forEach(([o, c]) => {
+    const ov = $(o); $(c).addEventListener('click', () => ovlClose(ov));
+    ov.addEventListener('click', e => { if(e.target === ov) ovlClose(ov); });
+  });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') document.querySelectorAll('#wheelOvl.open,#compOvl.open').forEach(ovlClose); });
+  setInterval(() => { if(!$('#call').classList.contains('active') || S.waiting) document.querySelectorAll('#wheelOvl.open,#compOvl.open').forEach(ovlClose); }, 500);
+
+  /* ---------- Ruleta de retos: gira para las dos personas, cada una lo ve en su idioma ---------- */
+  const WH = { rot:0, i:-1, spinning:false, bag:[] };
+  /* Bolsa barajada: ningún reto se repite hasta que han salido los 12. Los resultados de la otra persona también cuentan. */
+  function wheelTake(i){
+    if(!WH.bag.length) WH.bag = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    if(i === undefined) i = WH.bag[Math.floor(Math.random() * WH.bag.length)];
+    const k = WH.bag.indexOf(i); if(k > -1) WH.bag.splice(k, 1);
+    return i;
+  }
+  const W_EM = ['🏴‍☠️','🐧','🎭','🎬','🎵','⚡','💛','❓','📺','🔮','🏆','😮'];
+  const W_TXT = {
+    es: ['Habla como un pirata durante 1 minuto', 'Imita a tu animal favorito y que la otra persona lo adivine', 'Cuenta un chiste malísimo con la cara más seria del mundo',
+      'Describe tu día como si fuera un documental de naturaleza', 'Tararea una canción y que la otra persona adivine cuál es', 'Inventad juntos un superpoder inútil pero genial',
+      'Dile un cumplido sincero a la otra persona', 'Hablad solo con preguntas durante 1 minuto', 'Presenta el objeto que tengas más cerca como si lo vendieras en la teletienda',
+      'Resume tu semana en tres emojis y que la otra persona lo interprete', 'Elegid juntos un nombre épico para vuestra amistad', 'Pon tu mejor cara de sorpresa durante 5 segundos'],
+    en: ['Talk like a pirate for 1 minute', 'Imitate your favourite animal and let the other person guess it', 'Tell a terrible joke with the most serious face ever',
+      'Describe your day like a nature documentary', 'Hum a song and let the other person guess which one it is', 'Invent a useless but awesome superpower together',
+      'Give the other person a sincere compliment', 'Talk only in questions for 1 minute', 'Present the object nearest to you as if you were selling it on a shopping channel',
+      'Sum up your week in three emojis and let the other person interpret it', 'Pick an epic name for your friendship together', 'Make your best surprised face for 5 seconds']
+  };
+  const wheelCv = $('#wheelCv'), wctx = wheelCv.getContext('2d');
+  function wheelDraw(){
+    const W = wheelCv.width, c = W / 2, R = c - 6, a = Math.PI * 2 / 12;
+    wctx.clearRect(0, 0, W, W);
+    for(let k = 0; k < 12; k++){
+      const s = WH.rot + k * a - Math.PI / 2;
+      wctx.beginPath(); wctx.moveTo(c, c); wctx.arc(c, c, R, s, s + a); wctx.closePath();
+      wctx.fillStyle = k % 2 ? '#dff1ff' : '#89cff0'; wctx.fill();
+      wctx.strokeStyle = '#4fa8d8'; wctx.lineWidth = 2; wctx.stroke();
+      wctx.save(); wctx.translate(c, c); wctx.rotate(s + a / 2);
+      wctx.font = '26px serif'; wctx.textAlign = 'center'; wctx.textBaseline = 'middle'; wctx.fillText(W_EM[k], R * .68, 0); wctx.restore();
+    }
+    wctx.beginPath(); wctx.arc(c, c, 16, 0, Math.PI * 2); wctx.fillStyle = '#fff'; wctx.fill(); wctx.strokeStyle = '#4fa8d8'; wctx.stroke();
+  }
+  function wheelRes(){
+    const r = $('#wheelRes'); if(!r) return;
+    r.textContent = WH.i < 0 ? T('Gira la ruleta y el reto es para las dos personas.') : W_EM[WH.i] + ' ' + W_TXT[LANG === 'en' ? 'en' : 'es'][WH.i];
+  }
+  function wheelSpinTo(i){
+    if(WH.spinning) return;
+    WH.spinning = true; WH.i = -1; wheelRes(); $('#wheelSpin').disabled = true;
+    const a = Math.PI * 2 / 12, TAU = Math.PI * 2, s0 = WH.rot % TAU, fin = TAU - (i * a + a / 2);
+    const delta = (((fin - s0) % TAU) + TAU) % TAU + TAU * 5, t0 = performance.now(), D = 4200;
+    let lastK = -1;
+    const step = now => {
+      const p = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - p, 3);
+      WH.rot = s0 + delta * e; wheelDraw();
+      const k = Math.floor(WH.rot / a); if(k !== lastK){ lastK = k; tone(480 + (k % 6) * 45, .05, 'square', .02); }
+      if(p < 1){ requestAnimationFrame(step); return; }
+      WH.rot = WH.rot % TAU; WH.i = i; WH.spinning = false; $('#wheelSpin').disabled = false;
+      wheelDraw(); wheelRes(); chimeMatch();
+      chatPush('sys', W_EM[i] + ' ' + W_TXT[LANG === 'en' ? 'en' : 'es'][i], false);
+    };
+    requestAnimationFrame(step);
+  }
+  function wheelRecv(i){ if(!$('#call').classList.contains('active') || WH.spinning) return; wheelTake(i); ovlOpen($('#wheelOvl')); wheelDraw(); wheelSpinTo(i); }
+  $('#wheelBtn').addEventListener('click', () => { ovlOpen($('#wheelOvl')); wheelDraw(); wheelRes(); });
+  $('#wheelSpin').addEventListener('click', () => {
+    if(WH.spinning) return;
+    const i = wheelTake();
+    if(RT.real && RT.conn){ try{ RT.conn.send({ t:'wheel', i }); }catch(e){} }
+    wheelSpinTo(i);
+  });
+
+  /* ---------- Compatibilímetro: puntúa la charla (equilibrio, palabras comunes, buen rollo, curiosidad, tiempo) ---------- */
+  const CP = { res:null };
+  const STOP = new Set('para pero como esto esta este esos estas porque cuando donde tambien entonces sobre desde hasta muy mas menos algo todo toda todos with that this have from they there what your about would could just like been were will them then than into also very much more some when where which their'.split(' '));
+  const CTITLES = [[90, 'Almas gemelas del café', '☕'], [80, 'Dúo dinámico', '🦸'], [70, 'Pareja de baile perfecta', '💃'], [60, 'Equipo de pizza compartida', '🍕'], [50, 'Amigos en construcción', '🧱'], [0, 'Exploradores recién llegados', '🧭']];
+  const VIBE = /(?:ja|je|ji|ha|he){2,}|lol|[!❤✨\u{1F600}-\u{1F64F}\u{1F389}\u{1F525}\u{1F496}]/iu;
+  function wordsOf(arr){ const s = new Set(); arr.forEach(t => norm(t).split(' ').forEach(w => { if(w.length > 3 && !STOP.has(w)) s.add(w); })); return s; }
+  function compCalc(){
+    const els = [...document.querySelectorAll('#msgs .msg')].filter(e => e.dataset.src);
+    const me = els.filter(e => e.classList.contains('me')).map(e => e.dataset.src), th = els.filter(e => e.classList.contains('them')).map(e => e.dataset.src);
+    if(me.length < 2 || th.length < 2) return null;
+    const frac = (arr, re) => arr.filter(t => re.test(t)).length / arr.length;
+    const bal = 1 - Math.abs(me.length - th.length) / (me.length + th.length);
+    const A = wordsOf(me), B = wordsOf(th), shared = [...A].filter(w => B.has(w));
+    const words = Math.min(1, shared.length / (new Set([...A, ...B]).size || 1) * 4);
+    const vibe = Math.min(1, (frac(me, VIBE) + frac(th, VIBE)) / 2 * 2.2);
+    const cur = Math.min(1, Math.min(frac(me, /\?/), frac(th, /\?/)) * 3);
+    const time = Math.min(1, S.elapsed / 600);
+    const raw = bal * .2 + words * .25 + vibe * .25 + cur * .15 + time * .15;
+    return { pct:Math.round(35 + 64 * raw), shared:shared.slice(0, 3),
+      parts:[['Equilibrio de charla', bal], ['Sintonía de palabras', words], ['Buen rollo', vibe], ['Curiosidad', cur], ['Tiempo juntos', time]] };
+  }
+  function compRender(anim){
+    const box = $('#compBody'); if(!box) return;
+    const r = CP.res; $('#compSend').classList.toggle('hide', !r);
+    if(!r){ box.innerHTML = '<p></p>'; box.firstChild.textContent = T('Charlad un poco más y el compatibilímetro tendrá mucho que decir ✨'); return; }
+    const t = CTITLES.find(x => r.pct >= x[0]);
+    box.innerHTML = '<div class="gauge"><b></b></div><p class="ctitle"></p><div class="cbars"></div><p class="cshared"></p>';
+    box.querySelector('.ctitle').textContent = t[2] + ' ' + T(t[1]);
+    const bars = box.querySelector('.cbars');
+    r.parts.forEach(([l, v]) => {
+      const row = document.createElement('div'); row.className = 'crow';
+      const s = document.createElement('span'); s.textContent = T(l);
+      const bar = document.createElement('div'); bar.className = 'cbar'; const i = document.createElement('i'); i.style.width = Math.round(v * 100) + '%'; bar.appendChild(i);
+      row.append(s, bar); bars.appendChild(row);
+    });
+    box.querySelector('.cshared').textContent = r.shared.length ? T('Palabras que compartís: ') + r.shared.join(', ') : T('Seguid charlando: las palabras en común llegan enseguida');
+    const g = box.querySelector('.gauge'), n = g.querySelector('b'), t0 = performance.now();
+    const step = now => {
+      const p = anim ? Math.min(1, (now - t0) / 1400) : 1, v = Math.round(r.pct * (1 - Math.pow(1 - p, 3)));
+      g.style.setProperty('--p', v); n.textContent = v + '%';
+      if(p < 1 && g.isConnected) requestAnimationFrame(step); else if(p === 1 && anim) chimeMatch();
+    };
+    requestAnimationFrame(step);
+  }
+  $('#compBtn').addEventListener('click', () => { CP.res = compCalc(); ovlOpen($('#compOvl')); compRender(true); });
+  $('#compSend').addEventListener('click', () => {
+    const r = CP.res; if(!r) return; const t = CTITLES.find(x => r.pct >= x[0]);
+    AI.run = 0; chatSend('💞 ' + T('Compatibilímetro') + ': ' + r.pct + '% · ' + t[2] + ' ' + T(t[1]));
+    ovlClose($('#compOvl'));
+  });
 
   /* ---------- Controles de llamada ---------- */
   /* Reiniciar: doble pulsación con confirmación «¿Seguro?» */
