@@ -216,6 +216,28 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
 .modal .mclose{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:inherit;font-size:18px;line-height:1;cursor:pointer}
 .modal .mclose:hover{border-color:var(--dim)}
 .modal .mclose:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
+.waiting .controls #telBtn,.waiting .controls #pianoBtn,.waiting .controls #cardBtn{display:none}
+/* Telepatía + Dúo musical */
+.telm,.pianom{text-align:center;width:min(420px,100%)}
+.telgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 14px}
+.telgrid button{font-size:30px;padding:10px 0;border-radius:12px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;transition:.15s}
+.telgrid button:hover:not(:disabled){transform:translateY(-2px);border-color:var(--amber-d)}
+.telgrid button:disabled{opacity:.45;cursor:default}
+.telgrid button.pick{background:var(--amber);border-color:var(--accent-ink);opacity:1}
+.telbig{font-size:44px;min-height:56px;margin:0 0 4px;letter-spacing:.1em}
+.modal p.telinfo{font-family:var(--serif);font-size:20px;margin:0 0 10px}
+.keys{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0 14px}
+.key{height:88px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);font:inherit;font-size:12px;color:var(--dim);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;transition:background .12s,transform .08s}
+.key.on{background:var(--amber);color:#0b2a40;transform:translateY(3px)}
+.key.rem{background:#ffe0b3;border-color:#e8a24a;color:#7a4a10;transform:translateY(3px)}
+.key:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
+/* Postal de recuerdo */
+.cardm{width:min(640px,100%);text-align:center}
+.cardm canvas{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--line);background:#fffdf7;margin:0 0 12px;box-shadow:0 8px 24px rgba(11,42,64,.15)}
+.cardm input[type=text]{margin-top:0;margin-bottom:12px}
+.cardm .row{margin-top:0}
+.cardm .row .btn{padding:13px 16px;font-size:14px;min-width:140px}
+.cardm .cardtools{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
 </style>
 </head>
 <body>
@@ -285,6 +307,9 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         <input type="file" id="avatarFile" accept="image/*" hidden>
         <button class="ctl" id="wheelBtn" type="button">Ruleta de retos</button>
         <button class="ctl" id="compBtn" type="button">Compatibilímetro</button>
+        <button class="ctl" id="telBtn" type="button">Telepatía</button>
+        <button class="ctl" id="pianoBtn" type="button">Dúo musical</button>
+        <button class="ctl" id="cardBtn" type="button">Postal de recuerdo</button>
         <button class="ctl quiet" id="resetBtn" type="button" data-es="Reiniciar">Reiniciar</button>
       </div>
       <div class="invite hide" id="invite">
@@ -322,6 +347,42 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   </div>
 </div>
 
+<div class="ovl" id="telOvl" aria-hidden="true">
+  <div class="modal telm" role="dialog" aria-modal="true" aria-labelledby="telTitle">
+    <button class="mclose" id="telClose" type="button" aria-label="Cerrar">&times;</button>
+    <h2 id="telTitle">Telepatía</h2>
+    <p class="telinfo" id="telInfo" data-noi18n></p>
+    <div class="telgrid" id="telGrid"></div>
+    <div class="telbig" id="telBig" data-noi18n></div>
+    <p class="wres" id="telRes" aria-live="polite" data-noi18n></p>
+    <button class="btn primary" id="telStart" type="button" data-es="Empezar">Empezar</button>
+  </div>
+</div>
+
+<div class="ovl" id="pianoOvl" aria-hidden="true">
+  <div class="modal pianom" role="dialog" aria-modal="true" aria-labelledby="pianoTitle">
+    <button class="mclose" id="pianoClose" type="button" aria-label="Cerrar">&times;</button>
+    <h2 id="pianoTitle">Dúo musical</h2>
+    <p class="hint">Teclas pentatónicas: toquéis lo que toquéis, suena bien. La otra persona oye y ve cada nota.</p>
+    <div class="keys" id="keys"></div>
+    <p class="hint" data-noi18n>A S D F G H J K L ;</p>
+  </div>
+</div>
+
+<div class="ovl" id="cardOvl" aria-hidden="true">
+  <div class="modal cardm" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
+    <button class="mclose" id="cardClose" type="button" aria-label="Cerrar">&times;</button>
+    <h2 id="cardTitle">Postal de recuerdo</h2>
+    <canvas id="cardCv" width="1200" height="800" role="img" aria-label="Postal de recuerdo"></canvas>
+    <input type="text" id="cardText" maxlength="120" placeholder="Escribe unas palabras para la postal…">
+    <div class="row">
+      <button class="btn wa" id="cardWa" type="button">Enviar por WhatsApp</button>
+      <button class="btn" id="cardSave" type="button">Guardar imagen</button>
+    </div>
+    <div class="cardtools"><button class="link" id="cardRetake" type="button">Repetir foto</button></div>
+  </div>
+</div>
+
 <div class="ovl" id="aboutOvl" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
     <button class="mclose" id="aboutClose" type="button" aria-label="Cerrar">&times;</button>
@@ -336,6 +397,9 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       <li>Avatares con foto personalizada</li>
       <li>Ruleta de retos</li>
       <li>Compatibilímetro</li>
+      <li>Telepatía en directo</li>
+      <li>Piano a dúo</li>
+      <li>Postales de recuerdo</li>
       <li>Inglés y español</li>
     </ul>
     <p class="strong">Funciona en el navegador.</p>
@@ -526,6 +590,24 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Equipo de pizza compartida": "Shared-pizza team",
     "Amigos en construcción": "Friends in the making",
     "Exploradores recién llegados": "Fresh explorers",
+    "Telepatía": "Telepathy", "Dúo musical": "Duo jam", "Telepatía en directo": "Live telepathy", "Piano a dúo": "Piano duet",
+    "Empezar": "Start", "Otra vez": "Again", "Ronda": "Round",
+    "Teclas pentatónicas: toquéis lo que toquéis, suena bien. La otra persona oye y ve cada nota.": "Pentatonic keys: whatever you play, it sounds good. The other person hears and sees every note.",
+    "Elige el mismo emoji que la otra persona, sin decírselo. 3 rondas.": "Pick the same emoji as the other person, without telling them. 3 rounds.",
+    "¡Misma mente! ✅": "Same mind! ✅", "Esta vez no… ❌": "Not this time… ❌",
+    "¿En qué emoji está pensando?": "Which emoji are they thinking of?",
+    "Postal de recuerdo": "Memory postcard", "Postales de recuerdo": "Memory postcards",
+    "Saludos desde ChatApp": "Greetings from ChatApp",
+    "Escribe unas palabras para la postal…": "Write a few words for the postcard…",
+    "Repetir foto": "Retake photo", "Guardar imagen": "Save image",
+    "Este rato se queda con nosotros. ✦": "This moment stays with us. ✦",
+    "💌 Una postal de recuerdo desde ChatApp": "💌 A memory postcard from ChatApp",
+    "Postal copiada · pégala en WhatsApp (Ctrl+V)": "Postcard copied · paste it in WhatsApp (Ctrl+V)",
+    "Postal guardada · adjúntala en WhatsApp": "Postcard saved · attach it in WhatsApp",
+    "Postal guardada": "Postcard saved",
+    "No se pudo crear la postal": "Couldn’t create the postcard",
+    "juntos": "together",
+    "Mentes conectadas": "Minds connected", "Casi telepatía": "Almost telepathy", "Chispa de sintonía": "Spark of sync", "Mundos paralelos": "Parallel worlds",
   };
   const T = s => (LANG === 'en' && Object.prototype.hasOwnProperty.call(EN, s)) ? EN[s] : s;
   const setT = (el, es) => { el.dataset.es = es; el.textContent = T(es); };
@@ -568,7 +650,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     document.title = T(TITLE_ES); META.content = T(META_ES);
     applyStatic();
     document.querySelectorAll('[data-es]').forEach(el => { el.textContent = T(el.dataset.es); });
-    renderDone(); updateWa(); voiceLabel(); wheelRes(); compRender(false);
+    renderDone(); updateWa(); voiceLabel(); wheelRes(); compRender(false); telRender(); cardRedraw();
     const b = $('#langBtn');
     b.textContent = LANG === 'en' ? 'Espa\u00f1ol' : 'English';
     b.lang = LANG === 'en' ? 'es' : 'en';
@@ -924,6 +1006,8 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     } else if(d.t === 'leave'){ lost(); }
     else if(d.t === 'vote'){ RT.vote = d; }
     else if(d.t === 'wheel' && Number.isInteger(d.i) && d.i >= 0 && d.i < 12){ wheelRecv(d.i); }
+    else if(d.t === 'note' && Number.isInteger(d.i) && d.i >= 0 && d.i < 10){ pianoRecv(d.i); }
+    else if(d.t === 'tel'){ telNet(d); }
     else if(d.t === 'chat' && typeof d.m === 'string'){ chatRecv(d.m, d.tts !== false, !!d.ai); }
   }
   function gotCall(c){
@@ -1461,12 +1545,13 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   /* ---------- Ventanas emergentes (ruleta y compatibilímetro) ---------- */
   const ovlOpen = o => { o.classList.add('open'); o.setAttribute('aria-hidden', 'false'); };
   const ovlClose = o => { o.classList.remove('open'); o.setAttribute('aria-hidden', 'true'); };
-  [['#wheelOvl', '#wheelClose'], ['#compOvl', '#compClose']].forEach(([o, c]) => {
+  [['#wheelOvl', '#wheelClose'], ['#compOvl', '#compClose'], ['#telOvl', '#telClose'], ['#pianoOvl', '#pianoClose'], ['#cardOvl', '#cardClose']].forEach(([o, c]) => {
     const ov = $(o); $(c).addEventListener('click', () => ovlClose(ov));
     ov.addEventListener('click', e => { if(e.target === ov) ovlClose(ov); });
   });
-  document.addEventListener('keydown', e => { if(e.key === 'Escape') document.querySelectorAll('#wheelOvl.open,#compOvl.open').forEach(ovlClose); });
-  setInterval(() => { if(!$('#call').classList.contains('active') || S.waiting) document.querySelectorAll('#wheelOvl.open,#compOvl.open').forEach(ovlClose); }, 500);
+  const OVLS = '#wheelOvl.open,#compOvl.open,#telOvl.open,#pianoOvl.open,#cardOvl.open';
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') document.querySelectorAll(OVLS).forEach(ovlClose); });
+  setInterval(() => { if(!$('#call').classList.contains('active') || S.waiting){ document.querySelectorAll(OVLS).forEach(ovlClose); telReset(); } }, 500);
 
   /* ---------- Ruleta de retos: gira para las dos personas, cada una lo ve en su idioma ---------- */
   const WH = { rot:0, i:-1, spinning:false, bag:[] };
@@ -1582,6 +1667,231 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     AI.run = 0; chatSend('💞 ' + T('Compatibilímetro') + ': ' + r.pct + '% · ' + t[2] + ' ' + T(t[1]));
     ovlClose($('#compOvl'));
   });
+
+  const rnd = n => Math.floor(Math.random() * n);
+  const sendNet = o => { if(RT.real && RT.conn){ try{ RT.conn.send(o); }catch(e){} } };
+
+  /* ---------- Telepatía: los dos eligen un emoji a la vez; se revela a la vez; 3 rondas ---------- */
+  const EMO = ['🐱','🌙','🍕','🔥','🌊','🎈','🍀','⭐'];
+  const TL_T = [[3, 'Mentes conectadas', '🧠'], [2, 'Casi telepatía', '🔮'], [1, 'Chispa de sintonía', '✨'], [0, 'Mundos paralelos', '🪐']];
+  const TL = { on:false, r:1, mine:null, their:{}, score:0, reveal:null, final:false, gen:0 };
+  const tg = $('#telGrid');
+  EMO.forEach(e => { const b = document.createElement('button'); b.type = 'button'; b.textContent = e; b.setAttribute('aria-label', e); b.addEventListener('click', () => telPick(e)); tg.appendChild(b); });
+  function telReset(){ TL.gen++; Object.assign(TL, { on:false, r:1, mine:null, their:{}, score:0, reveal:null, final:false }); telRender(); }
+  function telRender(){
+    const info = $('#telInfo'); if(!info) return;
+    const big = $('#telBig'), res = $('#telRes'), st = $('#telStart');
+    const live = TL.on && !TL.final && TL.mine == null && !TL.reveal;
+    [...tg.children].forEach(b => { b.disabled = !live; b.classList.toggle('pick', TL.mine === b.textContent); });
+    st.classList.toggle('hide', TL.on && !TL.final);
+    big.textContent = ''; res.textContent = '';
+    if(TL.final){
+      const t = TL_T.find(x => TL.score >= x[0]);
+      big.textContent = t[2]; info.textContent = TL.score + '/3'; res.textContent = T(t[1]); setT(st, 'Otra vez');
+    } else if(!TL.on){
+      info.textContent = T('Elige el mismo emoji que la otra persona, sin decírselo. 3 rondas.'); setT(st, 'Empezar');
+    } else {
+      info.textContent = T('Ronda') + ' ' + TL.r + '/3';
+      if(TL.reveal){ big.textContent = TL.reveal.m + '  ' + TL.reveal.t; res.textContent = T(TL.reveal.hit ? '¡Misma mente! ✅' : 'Esta vez no… ❌'); }
+      else if(TL.mine != null) res.textContent = T('Esperando la respuesta de la otra persona…');
+      else res.textContent = T('¿En qué emoji está pensando?');
+    }
+  }
+  function telBegin(remote){
+    if(remote && TL.on && !TL.final) return;
+    TL.gen++; Object.assign(TL, { on:true, r:1, mine:null, their:{}, score:0, reveal:null, final:false });
+    if(!remote) sendNet({ t:'tel', k:'start' });
+    ovlOpen($('#telOvl')); telRender();
+  }
+  function telPick(e){
+    if(!TL.on || TL.final || TL.mine != null || TL.reveal || !EMO.includes(e)) return;
+    TL.mine = e; tone(520, .1, 'triangle', .04);
+    sendNet({ t:'tel', k:'pick', r:TL.r, e });
+    if(SP.on){ const r = TL.r, g = TL.gen; setTimeout(() => { if(TL.gen === g) telGot(r, Math.random() < .35 ? e : EMO[rnd(EMO.length)]); }, 900 + rnd(900)); }
+    telRender(); telCheck();
+  }
+  function telNet(d){
+    if(d.k === 'start') telBegin(true);
+    else if(d.k === 'pick' && Number.isInteger(d.r) && d.r >= 1 && d.r <= 3 && EMO.includes(d.e)) telGot(d.r, d.e);
+  }
+  function telGot(r, e){ TL.their[r] = e; if(TL.on) telCheck(); }
+  function telCheck(){
+    if(!TL.on || TL.final || TL.reveal || TL.mine == null || TL.their[TL.r] == null) return;
+    const hit = TL.mine === TL.their[TL.r];
+    if(hit){ TL.score++; chimeMatch(); } else tone(300, .25, 'sine', .05);
+    TL.reveal = { m:TL.mine, t:TL.their[TL.r], hit }; telRender();
+    const g = TL.gen;
+    setTimeout(() => {
+      if(TL.gen !== g) return;
+      if(TL.r >= 3){
+        TL.final = true; const t = TL_T.find(x => TL.score >= x[0]);
+        chatPush('sys', '🔮 ' + T('Telepatía') + ': ' + TL.score + '/3 · ' + t[2] + ' ' + T(t[1]), false); chimeEnd();
+      } else { TL.r++; TL.mine = null; TL.reveal = null; }
+      telRender(); telCheck();
+    }, 2200);
+  }
+  $('#telBtn').addEventListener('click', () => { ovlOpen($('#telOvl')); telRender(); });
+  $('#telStart').addEventListener('click', () => telBegin(false));
+
+  /* ---------- Dúo musical: piano pentatónico compartido en directo ---------- */
+  const PN = [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 783.99, 880], PL = ['C','D','E','G','A','C','D','E','G','A'], PKEYS = 'asdfghjkl;';
+  const PS = { t:null };
+  const keysEl = $('#keys');
+  PL.forEach((n, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'key'; b.textContent = n; b.setAttribute('aria-label', n + (i > 4 ? ' 5' : ' 4'));
+    b.addEventListener('pointerdown', e => { e.preventDefault(); pianoPlay(i); });
+    keysEl.appendChild(b);
+  });
+  const pianoSound = i => { tone(PN[i], .9, 'triangle', .08); tone(PN[i] * 2, .5, 'sine', .02); };
+  const pianoFlash = (i, c) => { const k = keysEl.children[i]; k.classList.add(c); setTimeout(() => k.classList.remove(c), 220); };
+  function pianoPlay(i){
+    pianoSound(i); pianoFlash(i, 'on'); sendNet({ t:'note', i });
+    if(SP.on) pianoEcho(i);
+  }
+  function pianoRecv(i){
+    if(!$('#call').classList.contains('active') || S.waiting) return;
+    const o = $('#pianoOvl'); if(!o.classList.contains('open')) ovlOpen(o);
+    pianoSound(i); pianoFlash(i, 'rem');
+  }
+  /* la persona «Chat AI» te acompaña con notas armónicas */
+  function pianoEcho(i){
+    if(PS.t) return;
+    PS.t = setTimeout(() => {
+      PS.t = null; if(!SP.on) return;
+      const offs = [[2], [2, 4], [-2, 0], [3, 5, 3]][rnd(4)];
+      offs.forEach((o, k) => setTimeout(() => { if(SP.on) pianoRecv(((i + o) % 10 + 10) % 10); }, k * 280));
+    }, 650 + rnd(400));
+  }
+  $('#pianoBtn').addEventListener('click', () => ovlOpen($('#pianoOvl')));
+  document.addEventListener('keydown', e => {
+    if(e.repeat || e.ctrlKey || e.metaKey || e.altKey || !$('#pianoOvl').classList.contains('open')) return;
+    if(document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+    const i = PKEYS.indexOf(e.key.toLowerCase()); if(i > -1) pianoPlay(i);
+  });
+
+  /* ---------- Postal de recuerdo: foto de los dos + mensaje, lista para enviar por WhatsApp ---------- */
+  const CARD = { r:null, l:null, blob:null, t:null };
+  const cardCv = $('#cardCv');
+  function cardSnap(src, mirror){
+    try{
+      const isV = src.tagName === 'VIDEO', w = isV ? src.videoWidth : src.width, h = isV ? src.videoHeight : src.height;
+      if(!w || !h) return null;
+      const c = document.createElement('canvas'); c.width = 480; c.height = 640;
+      const x = c.getContext('2d'), s = Math.max(480 / w, 640 / h), dw = w * s, dh = h * s;
+      x.save(); if(mirror){ x.translate(480, 0); x.scale(-1, 1); }
+      x.drawImage(src, (480 - dw) / 2, (640 - dh) / 2, dw, dh); x.restore();
+      return c;
+    }catch(e){ return null; }
+  }
+  function cardCapture(){
+    const rv = $('#remoteVid');
+    CARD.r = (!rv.classList.contains('hide') && cardSnap(rv)) || cardSnap($('#remote'));
+    CARD.l = cardSnap($('#local'), !S.avatar);
+  }
+  function cardWrap(x, text, w){
+    const out = []; let line = '';
+    const words = [];
+    String(text).split(/\s+/).filter(Boolean).forEach(word => {
+      while(x.measureText(word).width > w && word.length > 1){
+        let k = word.length - 1; while(k > 1 && x.measureText(word.slice(0, k)).width > w) k--;
+        words.push(word.slice(0, k)); word = word.slice(k);
+      }
+      words.push(word);
+    });
+    words.forEach(word => {
+      const test = line ? line + ' ' + word : word;
+      if(line && x.measureText(test).width > w){ out.push(line); line = word; } else line = test;
+    });
+    if(line) out.push(line);
+    return out;
+  }
+  function cardPolaroid(x, img, cx, cy, rot, emoji){
+    const pw = 290, ph = 380, pad = 18, bot = 74, W = pw + pad * 2, H = ph + pad + bot;
+    x.save(); x.translate(cx, cy); x.rotate(rot * Math.PI / 180);
+    x.shadowColor = 'rgba(11,42,64,.28)'; x.shadowBlur = 18; x.shadowOffsetY = 8;
+    x.fillStyle = '#fff'; x.fillRect(-W / 2, -H / 2, W, H);
+    x.shadowColor = 'transparent'; x.shadowBlur = 0; x.shadowOffsetY = 0;
+    if(img) x.drawImage(img, -pw / 2, -H / 2 + pad, pw, ph);
+    else {
+      x.fillStyle = '#dff1ff'; x.fillRect(-pw / 2, -H / 2 + pad, pw, ph);
+      x.font = '90px serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#12354d'; x.fillText('😊', 0, -H / 2 + pad + ph / 2);
+    }
+    x.font = '34px serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#12354d'; x.fillText(emoji, 0, H / 2 - bot / 2);
+    x.fillStyle = 'rgba(137,207,240,.65)'; x.save(); x.rotate(-.05); x.fillRect(-45, -H / 2 - 12, 90, 28); x.restore();
+    x.restore();
+  }
+  function cardDraw(){
+    const x = cardCv.getContext('2d'), W = 1200, H = 800, es = LANG !== 'en';
+    const SER = 'Georgia, "Iowan Old Style", "Times New Roman", serif', INK = '#12354d', DIM = '#4f7f9f';
+    const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#fffdf7'); g.addColorStop(1, '#eaf6ff');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.strokeStyle = '#89cff0'; x.lineWidth = 10; x.strokeRect(5, 5, W - 10, H - 10);
+    x.setLineDash([14, 10]); x.strokeStyle = '#4fa8d8'; x.lineWidth = 2; x.strokeRect(24, 24, W - 48, H - 48); x.setLineDash([]);
+    x.strokeStyle = '#b9defa'; x.lineWidth = 3; x.beginPath(); x.moveTo(650, 90); x.lineTo(650, H - 90); x.stroke();
+    cardPolaroid(x, CARD.r, 180, 410, -4, '👋');
+    cardPolaroid(x, CARD.l, 455, 400, 3.5, '😊');
+    /* sello y matasellos */
+    x.fillStyle = '#fff'; x.fillRect(1030, 56, 120, 150);
+    x.setLineDash([6, 5]); x.strokeStyle = '#4fa8d8'; x.lineWidth = 3; x.strokeRect(1040, 66, 100, 130); x.setLineDash([]);
+    x.font = '60px serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = INK; x.fillText('💌', 1090, 122);
+    x.font = '700 15px ui-monospace, Menlo, monospace'; x.fillStyle = '#2b7fb0'; x.fillText('ChatApp', 1090, 172);
+    const now = new Date(), loc = es ? 'es-ES' : 'en-GB';
+    x.strokeStyle = 'rgba(18,53,77,.55)'; x.lineWidth = 3;
+    x.beginPath(); x.arc(985, 140, 58, 0, Math.PI * 2); x.stroke();
+    x.beginPath(); x.arc(985, 140, 48, 0, Math.PI * 2); x.stroke();
+    x.fillStyle = 'rgba(18,53,77,.7)'; x.font = '700 20px ui-monospace, Menlo, monospace';
+    x.fillText(now.toLocaleDateString(loc, { day:'2-digit', month:'short' }).replace('.', '').toUpperCase(), 985, 132);
+    x.font = '700 16px ui-monospace, Menlo, monospace'; x.fillText(String(now.getFullYear()), 985, 156);
+    /* encabezado */
+    x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+    x.font = '700 18px ui-monospace, Menlo, monospace'; x.fillStyle = '#2b7fb0';
+    x.fillText(T('Postal de recuerdo').toUpperCase().split('').join(String.fromCharCode(8202)), 690, 112);
+    x.font = 'italic 500 52px ' + SER; x.fillStyle = INK;
+    cardWrap(x, T('Saludos desde ChatApp'), 460).slice(0, 2).forEach((l, i) => x.fillText(l, 690, 280 + i * 60));
+    /* mensaje sobre líneas */
+    const msg = $('#cardText').value.trim() || T('Este rato se queda con nosotros. ✦');
+    x.font = 'italic 29px ' + SER;
+    const lines = cardWrap(x, msg, 460).slice(0, 5);
+    x.strokeStyle = '#b9defa'; x.lineWidth = 2;
+    for(let i = 0; i < 5; i++){ const y = 420 + i * 46 + 10; x.beginPath(); x.moveTo(690, y); x.lineTo(1150, y); x.stroke(); }
+    x.fillStyle = INK; lines.forEach((l, i) => x.fillText(l, 690, 420 + i * 46));
+    /* datos de la charla */
+    const cp = compCalc(); let y = 680;
+    if(cp){ const t = CTITLES.find(z => cp.pct >= z[0]); x.font = '700 24px ' + SER; x.fillStyle = INK; x.fillText('💞 ' + cp.pct + '% · ' + t[2] + ' ' + T(t[1]), 690, y); y += 40; }
+    x.font = '20px ui-monospace, Menlo, monospace'; x.fillStyle = DIM;
+    x.fillText('⏱ ' + fmt(S.elapsed) + ' ' + T('juntos') + ' · ' + now.toLocaleDateString(loc, { day:'numeric', month:'long', year:'numeric' }), 690, y);
+    x.font = '15px ui-monospace, Menlo, monospace'; x.fillText('ChatApp · easylandx.github.io/chatapp', 690, 752);
+    CARD.blob = null; try{ cardCv.toBlob(b => { CARD.blob = b; }, 'image/png'); }catch(e){}
+  }
+  function cardRedraw(){ if($('#cardOvl').classList.contains('open')) cardDraw(); }
+  function cardSave(quiet){
+    if(!CARD.blob){ toast('No se pudo crear la postal'); return false; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(CARD.blob); a.download = 'chatapp-postal.png';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    if(!quiet) toast('Postal guardada');
+    return true;
+  }
+  function cardSend(){
+    if(!CARD.blob){ toast('No se pudo crear la postal'); return; }
+    const link = RT.roomId ? roomUrl(RT.roomId) : 'https://easylandx.github.io/chatapp/';
+    const txt = T('💌 Una postal de recuerdo desde ChatApp') + ' · ' + link;
+    const file = new File([CARD.blob], 'chatapp-postal.png', { type:'image/png' });
+    /* móvil: la hoja de compartir del sistema lleva la imagen directa a WhatsApp */
+    if(IS_TOUCH && navigator.canShare && navigator.canShare({ files:[file] })){ navigator.share({ files:[file], text:txt }).catch(() => {}); return; }
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent), q = encodeURIComponent(txt);
+    const url = mobile ? 'whatsapp://send?text=' + q : 'https://web.whatsapp.com/send?text=' + q;
+    if(!mobile && navigator.clipboard && window.ClipboardItem){
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': CARD.blob })])
+        .then(() => toast('Postal copiada · pégala en WhatsApp (Ctrl+V)', 6000))
+        .catch(() => { cardSave(true); toast('Postal guardada · adjúntala en WhatsApp', 6000); });
+    } else { cardSave(true); toast('Postal guardada · adjúntala en WhatsApp', 6000); }
+    if(mobile) location.href = url; else window.open(url, '_blank', 'noopener');
+  }
+  $('#cardBtn').addEventListener('click', () => { cardCapture(); ovlOpen($('#cardOvl')); cardDraw(); });
+  $('#cardRetake').addEventListener('click', () => { cardCapture(); cardDraw(); });
+  $('#cardText').addEventListener('input', () => { clearTimeout(CARD.t); CARD.t = setTimeout(cardDraw, 120); });
+  $('#cardWa').addEventListener('click', cardSend);
+  $('#cardSave').addEventListener('click', () => cardSave());
 
   /* ---------- Controles de llamada ---------- */
   /* Reiniciar: doble pulsación con confirmación «¿Seguro?» */
