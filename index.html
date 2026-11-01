@@ -238,7 +238,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
 .modal .mclose{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:inherit;font-size:18px;line-height:1;cursor:pointer}
 .modal .mclose:hover{border-color:var(--dim)}
 .modal .mclose:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
-.waiting .controls #telBtn,.waiting .controls #pianoBtn,.waiting .controls #cardBtn,.waiting .controls #shakeBtn{display:none}
+.waiting .controls #avPauseBtn,.waiting .controls #telBtn,.waiting .controls #pianoBtn,.waiting .controls #cardBtn,.waiting .controls #shakeBtn{display:none}
 /* Telepatía + Dúo musical */
 .telm,.pianom{text-align:center;width:min(420px,100%)}
 .telgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 14px}
@@ -288,7 +288,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   <header class="top">
     <div class="brand">
       <div class="logo"><span class="appico" aria-hidden="true"></span>Chat<b>App</b><span class="cursor" aria-hidden="true"></span></div>
-      <span class="ver" id="appVer" data-noi18n title="Version">v1</span>
+      <span class="ver" id="appVer" data-noi18n title="Version">v2</span>
       <div class="time hide" id="time" role="timer" aria-live="off">00:00</div>
     </div>
     <button class="lang" id="langBtn" data-noi18n lang="en" type="button">English</button>
@@ -347,6 +347,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         <button class="ctl" id="camBtn" aria-pressed="false">Cámara activa</button>
         <button class="ctl" id="benchBtn" type="button" aria-pressed="false" data-es="Modo Same-Bench">Modo Same-Bench</button>
         <button class="ctl" id="doodleBtn" type="button" aria-pressed="false" data-noi18n>Doodle</button>
+        <button class="ctl hide" id="avPauseBtn" type="button" aria-pressed="false" data-es="Pausar avatar IA">Pausar avatar IA</button>
         <button class="ctl" id="aiBtn" aria-pressed="false" title="La IA chatea por ti. Si las dos personas la activan, las IA hablan entre sí.">Modo IA: no</button>
         <button class="ctl" id="avatarBtn" type="button" data-es="Subir avatar">Subir avatar</button>
         <button class="ctl hide" id="avatarRm" type="button" data-es="Quitar avatar">Quitar avatar</button>
@@ -586,6 +587,9 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Modo normal": "Standard view",
     "Modo IA: sí": "AI mode: on",
     "Modo IA: no": "AI mode: off",
+    "Pausar avatar IA": "Pause AI avatar", "Reanudar avatar IA": "Resume AI avatar",
+    "Avatar IA en pausa · no responderá hasta que lo reanudes": "AI avatar paused · it won\u2019t reply until you resume it",
+    "Avatar IA reanudado": "AI avatar resumed",
     "La IA chatea por ti. Si las dos personas la activan, las IA hablan entre sí.": "The AI chats for you. If both people turn it on, the two AIs talk to each other.",
     "Modo IA activado · la IA chatea por ti": "AI mode on · the AI is chatting for you",
     "Modo IA desactivado · vuelves a escribir tú": "AI mode off · you’re typing again",
@@ -1254,7 +1258,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     $('#remoteVid').classList.add('hide'); $('#remote').classList.remove('hide');
     chimeMatch();
     /* «Chat AI»: la otra persona es una IA con avatar animado; recibe lo que ya escribiste mientras esperabas */
-    simStop(); SP.on = true;
+    simStop(); SP.on = true; avPauseUI();
     SP.hist = AI.hist.map(([r, c]) => [r === 'assistant' ? 'user' : 'assistant', c]);
     const mine = AI.persona; do { SP.persona = PERSONAS[Math.floor(Math.random() * PERSONAS.length)]; } while(SP.persona === mine);
     startCall();
@@ -1801,20 +1805,36 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
   }
   $('#aiBtn').addEventListener('click', () => aiSet(!AI.on));
 
+  $('#avPauseBtn').addEventListener('click', () => avPauseSet(!SP.paused));
   /* ---------- Chat AI: la persona simulada es una IA que conversa sola, igual que el Modo IA ---------- */
   function simStop(){
     clearTimeout(SP.t);
-    Object.assign(SP, { on:false, busy:false, hist:[], persona:null, angle:null, run:0 });
-    RV.talkUntil = RV.typeUntil = 0;
+    Object.assign(SP, { on:false, busy:false, hist:[], persona:null, angle:null, run:0, paused:false });
+    RV.talkUntil = RV.typeUntil = 0; avPauseUI();
   }
   function simKick(ms){
-    if(!SP.on) return;
+    if(!SP.on || SP.paused) return;
     const h = SP.hist[SP.hist.length - 1];
     if(!h || h[0] === 'user'){ clearTimeout(SP.t); SP.t = setTimeout(() => simReply(false), ms); }
   }
+  /* Botón para pausar / reanudar la conversación del avatar IA (solo visible con «Chat AI») */
+  function avPauseUI(){
+    const b = $('#avPauseBtn'); if(!b) return;
+    b.classList.toggle('hide', !SP.on);
+    b.setAttribute('aria-pressed', String(!!SP.paused));
+    setT(b, SP.paused ? 'Reanudar avatar IA' : 'Pausar avatar IA');
+  }
+  function avPauseSet(p){
+    if(!SP.on) return;
+    SP.paused = p; clearTimeout(SP.t);
+    if(p){ RV.typeUntil = 0; try{ speechSynthesis.cancel(); }catch(e){} }
+    avPauseUI();
+    toast(p ? 'Avatar IA en pausa · no responderá hasta que lo reanudes' : 'Avatar IA reanudado');
+    if(!p){ const h = SP.hist[SP.hist.length - 1]; if(h && h[0] === 'user') simKick(1200); else simNudge(); }
+  }
   function simNudge(){   /* si te quedas callado, la IA retoma la charla (máx. 2 veces seguidas) */
     clearTimeout(SP.t);
-    if(SP.on && SP.run < 2) SP.t = setTimeout(() => simReply(true), 24000 + Math.random() * 16000);
+    if(SP.on && !SP.paused && SP.run < 2) SP.t = setTimeout(() => simReply(true), 24000 + Math.random() * 16000);
   }
   function simSay(text){
     text = String(text).slice(0, 300);
@@ -1826,7 +1846,7 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
   }
   async function simReply(nudge){
     const h = SP.hist[SP.hist.length - 1];
-    if(!SP.on || SP.busy || !inCall() || (h && h[0] === 'assistant' && !nudge)) return;
+    if(!SP.on || SP.paused || SP.busy || !inCall() || (h && h[0] === 'assistant' && !nudge)) return;
     SP.busy = true; const q = AI.seq, first = !SP.hist.length;
     SP.minAt = performance.now() + 1100 + Math.random() * 400;   /* tiempo mínimo de «escribir» */
     RV.typeUntil = performance.now() + 9000;   /* puntos de «escribiendo…» mientras piensa */
@@ -1836,9 +1856,9 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
       if(t && isRepeat(t, SP.hist)) t = await aiGenerate(first, SP, SP.hist);
       if(!t || isRepeat(t, SP.hist)) t = aiFallback(first, SP.hist);
     } finally { SP.busy = false; RV.typeUntil = 0; }
-    if(!SP.on || !inCall()) return;
+    if(!SP.on || SP.paused || !inCall()) return;
     if(AI.seq !== q){ simKick(600); return; }   /* llegó otro mensaje mientras pensaba */
-    if(t){ const wait = Math.max(0, SP.minAt - performance.now()); if(wait) await new Promise(r => setTimeout(r, wait)); if(SP.on && inCall() && AI.seq === q) simSay(t); else if(SP.on) simKick(600); }
+    if(t){ const wait = Math.max(0, SP.minAt - performance.now()); if(wait) await new Promise(r => setTimeout(r, wait)); if(SP.on && !SP.paused && inCall() && AI.seq === q) simSay(t); else if(SP.on) simKick(600); }
   }
 
   /* ---------- Ventanas emergentes (ruleta y compatibilímetro) ---------- */
