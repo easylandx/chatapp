@@ -30,6 +30,8 @@ html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:15px;line-height:1.5;overflow-x:hidden;
   background-image:radial-gradient(ellipse at 50% 0%, #cfeaff 0%, var(--bg) 60%)}
 @keyframes flicker{0%,100%{opacity:1}47%{opacity:.96}48%{opacity:1}73%{opacity:.97}74%{opacity:1}}
+#doodleCv{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:85}
+#doodleBtn[aria-pressed="true"]{background:var(--amber);color:#0b2a40;font-weight:700}
 @media (prefers-reduced-motion:reduce){body::after{animation:none}*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
 .shell{max-width:1040px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top,0px)) max(clamp(22px,6vw,72px),env(safe-area-inset-right,0px)) calc(48px + env(safe-area-inset-bottom,0px)) max(clamp(22px,6vw,72px),env(safe-area-inset-left,0px));min-height:100%;display:flex;flex-direction:column}
@@ -342,6 +344,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         <button class="ctl" id="micBtn" aria-pressed="false">Micrófono activo</button>
         <button class="ctl" id="camBtn" aria-pressed="false">Cámara activa</button>
         <button class="ctl" id="benchBtn" type="button" aria-pressed="false" data-es="Modo Same-Bench">Modo Same-Bench</button>
+        <button class="ctl" id="doodleBtn" type="button" aria-pressed="false" data-noi18n>Doodle</button>
         <button class="ctl" id="aiBtn" aria-pressed="false" title="La IA chatea por ti. Si las dos personas la activan, las IA hablan entre sí.">Modo IA: no</button>
         <button class="ctl" id="avatarBtn" type="button" data-es="Subir avatar">Subir avatar</button>
         <button class="ctl hide" id="avatarRm" type="button" data-es="Quitar avatar">Quitar avatar</button>
@@ -452,6 +455,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       <li>Enlaces de sala privados</li>
       <li>Chat de texto</li>
       <li>Avatar de IA que habla</li>
+      <li>Modo IA que chatea por ti</li>
       <li>Modo de voz manos libres</li>
       <li>Avatares con foto personalizada</li>
       <li>Ruleta de retos</li>
@@ -460,6 +464,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       <li>Piano a dúo</li>
       <li>Postales de recuerdo</li>
       <li>Apretón de manos digital</li>
+      <li>Doodles en directo</li>
       <li>Inglés y español</li>
     </ul>
     <p class="strong">Funciona en el navegador.</p>
@@ -470,6 +475,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   </div>
 </div>
 
+<canvas id="doodleCv" aria-hidden="true"></canvas>
 <div class="toast" id="toast" role="status"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -625,6 +631,11 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Modo de voz manos libres": "Hands free voice mode",
     "Avatares con foto personalizada": "Custom photo avatars",
     "Inglés y español": "English & Spanish",
+    "Vista horizontal Same-Bench": "Same-Bench horizontal view",
+    "Vista horizontal activada · lado a lado": "Horizontal view on · side by side",
+    "Vista estándar activada": "Standard view on",
+    "Modo IA que chatea por ti": "AI mode that chats for you",
+    "Doodles en directo": "Live doodles",
     "Funciona en el navegador.": "Runs in your browser.",
     "Instalación fácil opcional.": "Optional Easy Install.",
     "En el móvil, añádela a la pantalla de inicio.": "On phone, add to home screen.",
@@ -678,6 +689,8 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "En ordenador, mantén pulsado el botón del ratón sobre el círculo.": "On desktop, hold the mouse button down on the circle.",
     "🤝 Apretón de manos digital completado": "🤝 Digital handshake complete",
     "Mentes conectadas": "Minds connected", "Casi telepatía": "Almost telepathy", "Chispa de sintonía": "Spark of sync", "Mundos paralelos": "Parallel worlds",
+    "Doodle activado · cada mensaje se dibuja en las dos pantallas": "Doodle on · every message is drawn on both screens",
+    "Doodle desactivado": "Doodle off",
   };
   const T = s => (LANG === 'en' && Object.prototype.hasOwnProperty.call(EN, s)) ? EN[s] : s;
   const setT = (el, es) => { el.dataset.es = es; el.textContent = T(es); };
@@ -1079,6 +1092,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     else if(d.t === 'note' && Number.isInteger(d.i) && d.i >= 0 && d.i < 10){ pianoRecv(d.i); }
     else if(d.t === 'tel'){ telNet(d); }
     else if(d.t === 'hs'){ hsNet(d); }
+    else if(d.t === 'doodle'){ doodleRecv(d); }
     else if(d.t === 'chat' && typeof d.m === 'string'){ chatRecv(d.m, d.tts !== false, !!d.ai); }
   }
   function gotCall(c){
@@ -1304,6 +1318,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   function chatClear(){
     simT.forEach(clearTimeout); simT = []; simI = 0; simStop();
     clearTimeout(AI.t); AI.hist = []; AI.run = 0; AI.seq++; AI.persona = null;
+    doodleClear();
     $('#msgs').innerHTML = '';
   }
   function keepU(u){ (window._utts = window._utts || []).push(u); if(window._utts.length > 20) window._utts.shift(); }  /* evita que iOS/Chrome descarten la locución */
@@ -1355,6 +1370,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     text = text.trim().slice(0,300); if(!text) return;
     chatPush('me', text, false, ai);
     if(S.avatar) avatarTalk(text);
+    doodleSend(text);
     if(S.waiting){
       RT.outbox.push(text);   /* se entrega cuando alguien se una */
     } else if(RT.real){
@@ -1366,6 +1382,240 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   }
   $('#chatInput').addEventListener('input', () => { if(S.avatar && $('#chatInput').value) AV.typeUntil = performance.now() + 900; });
   $('#chatForm').addEventListener('submit', e => { e.preventDefault(); const i = $('#chatInput'); AI.run = 0; chatSend(i.value); i.value = ''; i.focus(); });
+  /* ---------- Doodle: dibujo temporal con rotulador en las dos pantallas al enviar una palabra (mismo estilo que notes.html) ---------- */
+  const DCOL=['#111111','#1f4fd8','#d62828','#2a9d3f','#7b2cbf','#f77f00','#0a9396','#e5238c'];
+const DI={
+sun:['morning dia dias day sun sunny sunshine summer sol soleado verano','c50,50,15;p50,12 50,24;p50,76 50,88;p12,50 24,50;p76,50 88,50;p23,23 31,31;p69,69 77,77;p77,23 69,31;p31,69 23,77'],
+heart:['sentimiento sentimientos feeling feelings emocion emociones emotion heart love corazon quieres quiere queremos amor querer quiero amo','B50,86 22,58 16,36 30,24 44,28 50,40 56,28 70,24 84,36 78,58'],
+house:['house home casa hogar','p18,48 50,18 82,48;p26,44 26,82 74,82 74,44;P42,82 42,60 58,60 58,82'],
+tree:['tree forest wood arbol bosque','B50,10 70,18 80,36 68,54 50,58 32,54 20,36 30,18;p46,58 46,90;p54,58 54,90'],
+flower:['flower flowers rose garden flor flores rosa jardin','c50,38,7;c50,18,10;c70,38,10;c50,58,10;c30,38,10;p50,66 50,92;b50,80 64,70 76,74 64,84 50,82'],
+star:['star stars estrella estrellas','P50,10 61,38 90,38 66,56 76,86 50,68 24,86 34,56 10,38 39,38'],
+moon:['moon night luna noche','a50,50,34,50,310;b72,76 56,64 52,50 56,36 72,24'],
+cloud:['cloud cloudy nube nublado','B22,66 14,56 20,44 32,42 38,30 54,26 66,36 72,44 86,46 90,58 82,66'],
+rain:['rain rainy storm lluvia llover lluvioso tormenta','B22,52 14,42 20,30 32,28 38,16 54,12 66,22 72,30 86,32 90,44 82,52;p36,64 32,80;p52,64 48,80;p68,64 64,80'],
+cat:['cat kitten gato gata gatito','o50,58,28,22;p24,44 22,14 42,34;p76,44 78,14 58,34;c40,54,2.5;c60,54,2.5;p47,62 53,62 50,66 47,62;p12,58 34,62;p12,70 34,67;p88,58 66,62;p88,70 66,67'],
+dog:['dog puppy perro perra cachorro','o50,56,24,22;b30,38 14,40 12,62 26,64;b70,38 86,40 88,62 74,64;c41,52,2.5;c59,52,2.5;c50,63,4;b50,67 50,73 43,76;b50,73 57,76'],
+fish:['fish fishing pez pescado pescar','B30,34 56,34 76,50 56,66 30,66 22,50;P76,50 92,34 92,66;c38,47,2.5'],
+bird:['bird birds pajaro ave','o46,54,24,16;c74,40,10;p83,40 93,44 83,47;p24,50 8,40;p22,58 8,60;c76,38,2;p42,70 42,86;p54,70 54,86'],
+car:['car drive driving coche carro auto conducir','p10,64 10,50 28,46 38,30 64,30 76,46 92,50 92,64 10,64;c28,68,9;c72,68,9;p40,34 36,46 70,46 62,34'],
+bike:['bike bicycle cycling bici bicicleta','c24,64,18;c76,64,18;p24,64 40,40 66,40 76,64;p50,64 66,40;p66,40 62,28 74,26;p34,36 46,36;p40,40 50,64 24,64'],
+plane:['plane airplane flight travel fly avion vuelo viaje volar','P10,52 40,48 56,14 66,14 58,48 86,44 92,50 86,56 58,54 66,86 56,86 40,54 10,56'],
+book:['historia historias story stories cuento tale history book read reading study school libro leer estudiar escuela','p14,26 50,34 86,26 86,74 50,82 14,74 14,26;p50,34 50,82;p24,42 40,46;p24,54 40,58'],
+coffee:['coffee tea cafe te breakfast desayuno','p24,36 28,70 38,80 54,80 64,70 68,36;p24,36 68,36;b68,44 82,44 82,62 66,62;b36,26 32,18 38,12;b52,26 48,18 54,12'],
+phone:['llama llamo llamamos phone call mobile movil telefono llamar llamada','P34,10 66,10 66,90 34,90;p34,22 66,22;p34,78 66,78;c50,84,2'],
+music:['music song sing musica cancion cantar','c32,74,10;c70,64,10;p42,74 42,22 80,12 80,64;p42,36 80,26'],
+pizza:['pizza food dinner lunch eat comida cena almuerzo comer','P50,90 12,26 88,26;b12,26 50,14 88,26;c44,42,5;c62,40,5;c52,62,5'],
+apple:['apple fruit manzana fruta','B50,30 34,24 18,38 20,62 34,82 50,78 66,82 80,62 82,38 66,24;p50,30 52,14;b52,18 66,10 74,16 62,22'],
+cake:['cake birthday party cumple cumpleanos tarta pastel fiesta','P20,50 20,84 80,84 80,50;b20,50 30,58 40,50 50,58 60,50 70,58 80,50;p36,50 36,32;p50,50 50,32;p64,50 64,32;c36,27,3;c50,27,3;c64,27,3'],
+gift:['gift present regalo','P18,44 82,44 82,84 18,84;P14,32 86,32 86,44 14,44;p50,32 50,84;b50,32 36,14 28,26 50,32;b50,32 64,14 72,26 50,32'],
+clock:['clock time hour reloj tiempo hora','c50,50,36;p50,50 50,26;p50,50 68,58'],
+money:['money pay cash dollar euro dinero pagar','c50,50,34;b64,36 50,29 38,40 50,50 62,60 52,72 36,64;p50,22 50,80'],
+idea:['pienso piensa creer creo cree idea ideas think pensar','B50,10 70,18 76,40 64,58 62,68 38,68 36,58 24,40 30,18;p40,77 60,77;p43,86 57,86;p50,0 50,5'],
+smile:['alegria joy joyful happy smile glad feliz sonrisa contento alegre','c50,50,36;c38,42,3.5;c62,42,3.5;b30,58 42,72 58,72 70,58'],
+sad:['sorry perdon disculpa siento sad cry unhappy triste llorar','c50,50,36;c38,42,3.5;c62,42,3.5;b32,72 42,60 58,60 68,72'],
+camera:['camera photo picture camara foto fotografia','P12,34 88,34 88,80 12,80;p34,34 40,22 60,22 66,34;c50,57,14'],
+mountain:['mountain hike hiking montana monte','p8,82 36,34 52,58 64,42 92,82 8,82;p30,46 36,34 42,46'],
+wave:['sea ocean beach wave mar playa ola oceano','b6,36 20,26 34,36 48,26 62,36 76,26 94,36;b6,54 20,44 34,54 48,44 62,54 76,44 94,54;b6,72 20,62 34,72 48,62 62,72 76,62 94,72'],
+rocket:['rocket space launch cohete espacio','B50,8 64,30 64,66 36,66 36,30;c50,38,6;p36,52 22,72 36,66;p64,52 78,72 64,66;b42,70 50,92 58,70'],
+umbrella:['umbrella paraguas','a50,50,38,180,360;p12,50 88,50;p50,50 50,82;b50,82 50,90 38,90 36,82'],
+ball:['ball soccer football futbol pelota balon sport deporte','c50,50,34;P50,38 62,46 57,60 43,60 38,46;p50,38 50,16;p62,46 82,40;p57,60 68,78;p43,60 32,78;p38,46 18,40'],
+gym:['gym workout weights fitness strength gimnasio pesas entrenar entreno fuerza','p26,50 74,50;P18,34 28,34 28,66 18,66;P72,34 82,34 82,66 72,66;p10,42 10,58;p90,42 90,58'],
+laptop:['trabajar trabaja trabajan trabajamos trabajas computer laptop work office code coding ordenador portatil trabajo oficina','P20,24 80,24 80,60 20,60;p20,60 8,74 92,74 80,60'],
+mail:['mail email letter message correo carta mensaje','P12,26 88,26 88,74 12,74;p12,26 50,54 88,26'],
+pen:['write writing pen note notes escribir boligrafo nota notas','P20,80 24,64 70,18 82,30 36,76;p62,26 74,38'],
+person:['person people friend friends family persona gente amigo amiga amigos familia','c50,26,14;b24,88 26,58 38,50 62,50 74,58 76,88'],
+fire:['fire hot burn fuego caliente','B50,8 62,30 78,52 72,78 50,90 28,78 22,52 36,36 42,50'],
+drop:['drop water gota agua','B50,10 64,38 74,60 64,80 50,88 36,80 26,60 36,38'],
+bed:['sleep bed sleepy tired dormir cama sueno cansado','p10,70 90,70;p10,48 10,76;p90,70 90,76;P10,56 50,56 50,70;p62,22 78,22 62,38 78,38'],
+snow:['snow cold winter nieve frio invierno','p50,10 50,90;p14,30 86,70;p14,70 86,30'],
+rabbit:['rabbit bunny conejo conejito','o50,64,20,18;o40,26,7,20;o60,26,7,20;c43,62,2;c57,62,2;c50,69,2.5;p30,68 42,70;p70,68 58,70'],
+horse:['horse pony caballo yegua','p30,86 34,56 28,38 36,18 48,28 70,34 84,60 70,70 62,62 56,86;p38,22 42,10 48,24;c52,36,2.5;c76,58,2'],
+cow:['cow cattle milk vaca toro leche','o50,56,26,22;b24,40 16,26 26,22;b76,40 84,26 74,22;o50,68,14,9;c44,68,2;c56,68,2;c40,50,2.5;c60,50,2.5'],
+pig:['pig pork cerdo cochino puerco','c50,52,30;p24,36 22,18 40,26;p76,36 78,18 60,26;o50,62,13,9;c45,62,2;c55,62,2;c38,46,2.5;c62,46,2.5'],
+butterfly:['butterfly mariposa','B50,50 26,16 10,30 22,52;B50,50 74,16 90,30 78,52;B50,52 30,60 22,82 40,80;B50,52 70,60 78,82 60,80;p50,30 50,76;b50,30 44,18 40,14;b50,30 56,18 60,14'],
+turtle:['turtle tortoise tortuga','a50,60,32,180,360;p18,60 82,60;c88,58,7;p30,60 26,76;p66,60 70,76;p50,28 50,60;p18,60 8,66'],
+elephant:['elephant elefante','c50,46,26;o22,48,10,16;o78,48,10,16;b50,54 50,76 46,88 56,90;c40,42,2.5;c60,42,2.5'],
+lion:['lion leon king rey','c50,50,38;c50,52,22;c42,48,2.5;c58,48,2.5;p46,58 54,58 50,63 46,58;b50,63 44,70;b50,63 56,70'],
+bee:['bee honey bees abeja miel','o50,56,22,16;p42,41 42,71;p54,41 54,71;o40,32,9,13;o62,32,9,13;p72,56 84,56'],
+snake:['snake serpent serpiente culebra','b14,80 30,60 20,40 40,30 60,44 52,64 74,70 88,50 80,30;p80,30 86,22;p80,30 90,28'],
+frog:['frog rana sapo','o50,58,32,22;c34,32,9;c66,32,9;c34,32,3;c66,32,3;b28,62 40,72 60,72 72,62'],
+duck:['duck pato','B14,56 30,76 60,78 78,60 70,50 40,52;c74,34,12;P84,34 94,38 84,42;c76,32,2'],
+bread:['bread toast bake pan tostada','B14,62 14,44 28,34 72,34 86,44 86,62 80,72 20,72;p30,46 32,56;p50,44 52,56;p70,46 72,56'],
+egg:['egg eggs huevo huevos','B50,12 68,34 74,58 62,80 50,86 38,80 26,58 32,34'],
+cheese:['cheese queso','P12,70 12,46 88,30 88,70;c30,60,5;c60,52,6;c50,66,4'],
+burger:['burger hamburger hamburguesa','b14,46 20,26 50,18 80,26 86,46 14,46;p12,56 88,56;b12,64 24,70 36,64 48,70 60,64 72,70 88,64;p14,74 14,80 24,86 76,86 86,80 86,74 14,74;p36,32 40,34;p52,28 56,30;p64,34 68,32'],
+icecream:['icecream ice cream helado','P30,52 70,52 50,90;B30,52 24,40 30,26 50,20 70,26 76,40 70,52'],
+banana:['banana platano','b14,30 20,60 46,80 82,72 90,60;b14,30 30,58 52,66 80,56 90,60'],
+strawberry:['strawberry strawberries fresa fresas','B50,86 28,66 22,38 38,32 62,32 78,38 72,66;p40,32 50,20 60,32;p50,20 50,12;c40,46,1.5;c58,44,1.5;c50,58,1.5;c42,66,1.5'],
+carrot:['carrot vegetable zanahoria verdura','P36,34 64,34 50,92;b50,34 42,16;b50,34 50,12;b50,34 58,16;p42,46 50,46;p46,60 54,60'],
+wine:['wine vino cheers toast brindis brindar','p28,14 72,14 68,42 50,56 32,42 28,14;p30,28 70,28;p50,56 50,86;p34,88 66,88'],
+beer:['beer cerveza','P22,30 62,30 62,86 22,86;b62,40 82,40 82,70 62,72;b20,30 22,18 34,16 42,22 54,16 66,20 64,30'],
+cookie:['cookie biscuit galleta','c50,50,34;c38,38,3;c60,40,3;c46,60,3;c64,62,3;c34,56,3'],
+angry:['angry mad furious enfadado enojado rabia enfado','c50,50,36;p26,34 44,42;p74,34 56,42;c38,48,3;c62,48,3;b32,72 42,62 58,62 68,72'],
+surprise:['surprised surprise wow shock sorpresa sorprendido sorprendida','c50,50,36;c38,42,4;c62,42,4;o50,68,8,11'],
+laugh:['laugh laughing haha lol funny reir risa jaja divertido gracioso','c50,50,36;b28,42 36,36 44,42;b56,42 64,36 72,42;B32,58 68,58 60,76 40,76'],
+wink:['wink joke guino broma','c50,50,36;c38,42,3.5;p56,42 68,42;b30,58 42,72 58,72 70,58'],
+cool:['cool awesome guay chulo','c50,50,36;P24,38 46,38 44,50 26,50;P54,38 76,38 74,50 56,50;p46,40 54,40;b34,64 44,70 58,70 66,62'],
+inlove:['crush adore enamorado enamorada','c50,50,36;B38,46 31,40 33,34 38,36 43,34 45,40;B62,46 55,40 57,34 62,36 67,34 69,40;b32,60 42,72 58,72 68,60'],
+scared:['worried scared afraid nervous miedo asustado nervioso','c50,50,36;p28,36 42,32;p72,36 58,32;c38,46,3;c62,46,3;b32,68 40,62 48,68 56,62 64,68'],
+thumbs:['bueno buena buenos buenas good ok okay nice perfect vale bien perfecto','p14,48 34,48 34,84 14,84 14,48;b34,50 46,34 50,16 60,18 58,38 80,38 84,50 80,70 74,84 34,84'],
+check:['yes si correcto check done hecho listo','p18,52 40,74 84,26'],
+cross:['no nope never nunca jamas','p20,20 80,80;p80,20 20,80'],
+question:['why porque reason razon razones motivo question pregunta duda doubt','b34,30 38,16 60,14 68,28 58,44 50,52 50,62;c50,80,3'],
+warning:['attention warning important atencion cuidado ojo importante alert aviso','P50,10 92,84 8,84;p50,34 50,60;c50,72,2.5'],
+hello:['mano manos hand hands hello hi hola hey saludos bye adios chao','o50,66,22,20;p34,56 30,24;p44,50 42,16;p56,50 58,16;p66,56 72,26;b30,66 16,62 14,52'],
+thanks:['thanks thank gracias pray rezar','b50,90 40,60 40,30 50,12;b50,90 60,60 60,30 50,12'],
+trophy:['mejor mejores best better top congratulations congrats celebrate felicidades enhorabuena celebrar win ganar trophy winner campeon trofeo','p28,18 72,18 68,50 50,62 32,50 28,18;p50,62 50,78;p36,86 64,86;b28,26 14,26 16,42 32,44;b72,26 86,26 84,42 68,44'],
+clover:['luck lucky clover suerte trebol','c38,38,13;c62,38,13;c38,62,13;c62,62,13;b50,56 52,76 60,90'],
+peace:['peace paz','c50,50,36;p50,14 50,86;p50,50 26,76;p50,50 74,76'],
+kiss:['kiss lips beso besos','B16,50 34,36 50,42 66,36 84,50 66,68 50,72 34,68;b16,50 50,56 84,50'],
+key:['key keys llave llaves','c28,50,14;p42,50 88,50;p74,50 74,64;p84,50 84,60'],
+lock:['lock password secret candado secreto seguro privacy','P24,44 76,44 76,86 24,86;a50,44,18,180,360;c50,64,4'],
+glasses:['glasses sunglasses gafas lentes','c28,56,16;c72,56,16;p44,54 56,54;p12,52 6,40;p88,52 94,40'],
+shirt:['shirt clothes clothing dress camisa ropa vestido camiseta','P34,14 66,14 88,34 76,46 68,38 68,88 32,88 32,38 24,46 12,34'],
+shoe:['shoe shoes sneakers run running walk zapato zapatos zapatilla zapatillas correr caminar','p10,70 14,40 40,44 50,56 80,62 92,74 92,80 10,80 10,70;p26,46 30,56;p36,48 40,58'],
+bag:['bag shopping shop store buy mochila bolsa compras tienda comprar','P24,34 76,34 84,88 16,88;b36,34 36,16 64,16 64,34'],
+tv:['tv television movie movies cinema film tele peli pelicula cine serie','P12,22 88,22 88,70 12,70;p38,84 62,84;p50,70 50,84;p38,10 50,22 62,10'],
+lamp:['lamp light lampara luz','P30,18 70,18 82,52 18,52;p50,52 50,80;p32,88 68,88'],
+scissors:['scissors cut hair tijeras cortar pelo peluqueria','c30,72,10;c70,72,10;p36,64 66,14;p64,64 34,14'],
+bell:['bell alarm reminder campana alarma recordatorio','B50,12 66,22 70,48 82,70 18,70 30,48 34,22;c50,82,6'],
+flag:['nacion naciones flag country bandera pais','p26,12 26,90;P26,14 80,14 68,30 80,46 26,46'],
+magnifier:['search find look buscar encontrar lupa','c42,42,26;p60,60 88,88'],
+calendar:['ano anos year years calendar date schedule appointment meeting calendario fecha cita reunion agenda','P14,24 86,24 86,86 14,86;p14,40 86,40;p32,14 32,30;p68,14 68,30;c30,54,2.5;c50,54,2.5;c70,54,2.5;c30,70,2.5;c50,70,2.5'],
+bus:['bus train metro tren autobus','P14,16 86,16 86,76 14,76;p14,50 86,50;p30,16 30,50;p50,16 50,50;p70,16 70,50;c30,82,8;c70,82,8'],
+ship:['ship boat sail cruise barco crucero velero','P10,60 90,60 76,84 24,84;p50,60 50,14;P50,16 80,50 50,50'],
+hat:['hat cap sombrero gorra','a50,60,26,180,360;b8,64 50,76 92,64;p26,52 74,52'],
+guitar:['guitar guitarra rock','o40,66,22,18;p52,56 84,22;P82,18 90,10 94,18 86,26;c40,66,5'],
+piano:['piano keyboard teclado','P10,28 90,28 90,78 10,78;p26,54 26,78;p42,54 42,78;p58,54 58,78;p74,54 74,78;P22,28 30,28 30,54 22,54;P38,28 46,28 46,54 38,54;P54,28 62,28 62,54 54,54'],
+drum:['drum drums band bateria tambor','o50,34,36,12;p14,34 14,70;p86,34 86,70;b14,70 50,84 86,70;p30,6 60,28;p70,6 46,26'],
+mic:['microphone mic karaoke concert microfono concierto singer cantante','o50,32,12,20;b32,38 36,60 50,66 64,60 68,38;p50,66 50,86;p36,88 64,88'],
+headphones:['headphones podcast listen auriculares cascos escuchar','a50,52,32,180,360;P14,50 26,50 26,72 14,72;P74,50 86,50 86,72 74,72'],
+violin:['violin orchestra orquesta classical','B50,34 62,30 66,46 58,54 68,66 62,86 38,86 32,66 42,54 34,46 38,30;p50,34 50,6;p76,10 86,88'],
+radio:['radio fm','P12,32 88,32 88,84 12,84;c34,58,14;p58,48 78,48;p58,58 78,58;p58,68 78,68;p70,32 84,10'],
+thing:['cosa cosas thing things objeto objetos algo','P20,36 56,36 56,78 20,78;p20,36 36,20 72,20 56,36;p56,78 72,62 72,20'],
+man:['padre padres father dad papa hombre hombres man men senor chico','c50,22,12;p50,34 50,66;p50,66 36,90;p50,66 64,90;p50,42 28,58;p50,42 72,58'],
+woman:['madre madres mother mom mama mujer mujeres woman women senora chica','c50,22,12;P50,34 30,74 70,74;p42,74 42,90;p58,74 58,90;p38,46 24,62;p62,46 76,62'],
+child:['hijo hija hijos hijas daughter nino nina ninos ninas child children kid kids bebe baby','c50,30,18;p50,48 50,72;p50,72 40,90;p50,72 60,90;p50,56 34,66;p50,56 66,66;c44,28,1.5;c56,28,1.5'],
+life:['vivo vives vivimos vida vivir vive viven life live alive','p50,90 50,50;b50,60 30,56 20,36 40,38 50,56;b50,50 70,44 82,24 62,26 50,48'],
+world:['mundo mundial world globe planet planeta tierra earth','c50,50,36;o50,50,14,36;p14,50 86,50;b20,30 50,36 80,30;b20,70 50,64 80,70'],
+moment:['momento momentos moment rato instante instant vez veces','P28,12 72,12 54,50 72,88 28,88 46,50;p44,76 56,76;p20,12 80,12;p20,88 80,88'],
+place:['lugar lugares sitio place spot where donde location ubicacion','B50,90 30,56 26,38 36,20 50,14 64,20 74,38 70,56;c50,38,10'],
+problem:['problema problemas problem issue error fallo bug lio','b20,56 40,24 66,34 74,60 50,76 28,62 38,40 60,46 56,62'],
+truth:['verdad verdades truth true real cierto verdadero honest honesto','p50,14 50,84;p30,86 70,86;p18,28 82,28;p18,28 8,52 28,52 18,28;p82,28 72,52 92,52 82,28'],
+big:['grande grandes big large huge enorme gigante','p20,80 80,20;p52,20 80,20 80,48;p48,80 20,80 20,52'],
+do:['','p45,34 45,90;P20,16 70,16 70,34 20,34'],
+have:['','b14,50 30,76 70,76 86,50;c50,44,14'],
+say:['','B16,22 84,22 84,60 56,60 40,80 42,60 16,60;p28,36 72,36;p28,48 60,48'],
+see:['','B10,50 30,34 50,30 70,34 90,50 70,66 50,70 30,66;c50,50,12;c50,50,4'],
+go:['','p10,50 82,50;p62,28 86,50 62,72'],
+know:['educacion education colegio universidad university teacher profesor profesora maestro maestra aprender learn','P50,20 92,38 50,56 8,38;b28,48 28,66 50,76 72,66 72,48;p92,38 92,62'],
+part:['parte partes part parts pieza trozo porcion','c50,50,34;p50,50 50,16;p50,50 80,66'],
+shape:['forma formas form shape','c32,34,16;P58,18 88,18 88,48 58,48;P50,56 76,90 24,90'],
+word:['palabra palabras word words texto text letra','p14,76 28,24 42,76;p19,58 37,58;p56,24 56,76;b56,24 80,26 80,48 56,50;b56,50 84,52 84,74 56,76'],
+case:['caso casos case briefcase maletin lawyer abogado ley law','P12,32 88,32 88,80 12,80;b36,32 36,18 64,18 64,32;p12,52 88,52;c50,52,4'],
+state:['estado estados state gobierno government politica politics edificio building','P10,40 50,16 90,40;p20,40 20,76;p38,40 38,76;p62,40 62,76;p80,40 80,76;p10,84 90,84;p14,78 86,78'],
+group:['grupo grupos group team equipo crowd multitud','c28,34,10;c50,28,11;c72,34,10;b14,80 16,56 28,48 40,56 42,80;b36,80 38,52 50,44 62,52 64,80;b58,80 60,56 72,48 84,56 86,80'],
+city:['ciudad ciudades city town pueblo skyline rascacielos','p8,88 8,50 28,50 28,30 48,30 48,60 68,60 68,20 88,20 88,88 8,88;p36,40 40,40;p76,32 80,32;p76,48 80,48'],
+friends:['amistad amistades friendship','c26,40,10;p26,50 26,76;c74,40,10;p74,50 74,76;p26,58 74,58;B50,34 40,24 42,16 50,18 58,16 60,24'],
+health:['salud health sano healthy medicina medicine doctor hospital medico','P38,14 62,14 62,38 86,38 86,62 62,62 62,86 38,86 38,62 14,62 14,38 38,38'],
+medal:['experiencia experiencias experience medal medalla premio prize award','c50,40,22;p36,58 28,88 50,76 72,88 64,58;c50,40,10'],
+decision:['decision decisiones decide decidir choice elegir choose eleccion','p50,90 50,50;p50,50 22,18;p50,50 78,18;p22,18 22,32;p22,18 36,18;p78,18 78,32;p78,18 64,18'],
+door:['puerta door','P30,12 70,12 70,88 30,88;c62,52,3'],
+sparkle:['nuevo nueva nuevos nuevas new','P50,8 58,42 92,50 58,58 50,92 42,58 8,50 42,42'],
+first:['primero primera primeros primeras first','p38,30 50,18 50,82;p36,82 64,82'],
+last:['ultimo ultima ultimos ultimas last final end fin terminar','P34,12 66,12 88,34 88,66 66,88 34,88 12,66 12,34'],
+head:['cabeza cabezas head mente mind brain cerebro','b30,76 24,44 32,22 52,12 74,20 80,40 70,58 70,76;p30,76 70,76;c54,36,2.5'],
+come:['','p90,50 18,50;p38,28 14,50 38,72'],
+same:['','p20,38 80,38;p20,62 80,62'],
+all:['','c50,50,38;c50,50,24;c50,50,10'],
+other:['','P14,30 46,30 46,62 14,62;P54,38 86,38 86,70 54,70;p46,46 54,46']};
+const DK=Object.create(null),DKW=Object.create(null);for(const k in DI)DI[k][0].split(' ').filter(Boolean).forEach(w=>DK[w]=k);
+/* very common verbs: used only when a line has no more concrete word */
+const DWK={do:'hacer hago haces hace hacemos hacen hizo do does make makes',have:'tener tengo tienes tiene tenemos tienen have has poner pongo pones pone ponemos ponen put puts',say:'decir digo dices dice dicen say says said tell hablar hablo habla hablamos hablan speak talk',see:'ver veo ves ve vemos ven see sees mirar miro mira watch',go:'ir voy vas va vamos van go goes going dejar dejo dejas deja dejamos dejan leave leaves let',know:'saber sabes sabe sabemos saben know knows conocer conozco conoces conoce conocemos conocen',gift:'dar doy das da damos dan give gives',gym:'poder puedo puedes puede podemos pueden can could',person:'ser soy eres es somos son fue ser',place:'estar estoy estas esta estamos estan',come:'venir vengo vienes viene venimos vienen come comes coming llegar llego llegas llega llegamos llegan arrive arrives',moment:'pasar paso pasas pasa pasamos pasan pass passes happen happens',magnifier:'encontrar encuentro encuentras encuentra encontramos encuentran find finds found',coffee:'tomar tomo tomas toma tomamos toman take takes',bag:'llevar llevo llevas lleva llevamos llevan carry carries',clock:'esperar espero esperas espera esperamos esperan wait waits hope',hello:'necesitar necesito necesitas necesita necesitamos necesitan need needs',heart:'gustar gusta gustan gusto gustas like likes sentir sientes siente sentimos sienten feel feels',door:'salir salgo sales sale salimos salen entrar entro entras entra entramos entran enter exit',same:'mismo misma mismos mismas same',all:'todo toda todos todas all everything everyone',other:'otro otra otros otras other another'};
+for(const k in DWK)DWK[k].split(' ').forEach(w=>{if(!DK[w])DKW[w]=k});
+const DGEN=['star','heart','smile','idea','cloud'];
+const dnorm=w=>w.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zñ]/g,'');
+const dfind=(w,M)=>{w=dnorm(w);return M[w]||M[w.replace(/(es|s)$/,'')]||M[w.replace(/s$/,'')]||null};
+let DSEED=1;const DRND=()=>{DSEED|=0;DSEED=DSEED+0x6D2B79F5|0;let t=Math.imul(DSEED^DSEED>>>15,1|DSEED);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};const DR=(a,b)=>a+DRND()*(b-a);
+function dbuild(key,ox,oy,sz,col){const k=sz/100,out=[],ph=DR(0,6),sc=DR(.94,1.06);
+ const W=(x,y,i)=>{const w=Math.sin(ph+i*.13)*.9+Math.sin(ph*2+i*.31)*.5;return[ox+(x-50)*k*sc+50*k+w*k,oy+(y-50)*k*sc+50*k+Math.cos(ph+i*.11)*.8*k]};
+ const rs=p=>{const r=[];for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/2));for(let j=(i==1?0:1);j<=n;j++)r.push([a[0]+(b[0]-a[0])*j/n,a[1]+(b[1]-a[1])*j/n])}return r};
+ const cr=(p,cl)=>{const r=[],n=p.length,g=i=>cl?p[(i+n)%n]:p[Math.max(0,Math.min(n-1,i))];for(let i=0;i<(cl?n:n-1);i++){const a=g(i-1),b=g(i),c=g(i+1),d=g(i+2);for(let t=0;t<1;t+=.1){const t2=t*t,t3=t2*t;r.push([.5*(2*b[0]+(-a[0]+c[0])*t+(2*a[0]-5*b[0]+4*c[0]-d[0])*t2+(-a[0]+3*b[0]-3*c[0]+d[0])*t3),.5*(2*b[1]+(-a[1]+c[1])*t+(2*a[1]-5*b[1]+4*c[1]-d[1])*t2+(-a[1]+3*b[1]-3*c[1]+d[1])*t3)])}}if(cl)r.push(r[0]);else r.push(p[n-1]);return r};
+ const arc=(cx,cy,rx,ry,a0,a1)=>{const r=[],n=Math.max(8,Math.ceil(Math.abs(a1-a0)/9));for(let i=0;i<=n;i++){const a=(a0+(a1-a0)*i/n)*Math.PI/180;r.push([cx+rx*Math.cos(a),cy+ry*Math.sin(a)])}return r};
+ DI[key][1].split(';').forEach(c=>{const t=c[0],v=c.slice(1).match(/-?\d+\.?\d*/g).map(Number),pp=[];for(let i=0;i+1<v.length&&(t!='c'&&t!='o'&&t!='a');i+=2)pp.push([v[i],v[i+1]]);
+  let pts;if(t=='p')pts=rs(pp);else if(t=='P'){pp.push(pp[0]);pts=rs(pp)}else if(t=='b')pts=cr(pp,false);else if(t=='B')pts=cr(pp,true);
+  else if(t=='c'){const a=DR(0,360);pts=arc(v[0],v[1],v[2],v[2],a,a+372)}else if(t=='o'){const a=DR(0,360);pts=arc(v[0],v[1],v[2],v[3],a,a+372)}else pts=arc(v[0],v[1],v[2],v[2],v[3],v[4]);
+  out.push(pts.map((q,i)=>{const m=W(q[0],q[1],i);return[m[0],m[1],0,Math.max(2.6,Math.min(4.4,3.4+Math.sin(ph+i*.2)*.5)),col]}))});
+ return out}
+function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[DK,DKW])for(let i=w.length-1;i>=0;i--){const k=dfind(w[i],M);if(k)return{k,w:w[i]}}return{k:null,w:w[w.length-1]||''}}
+
+  const DD = { on:false, list:[], raf:0, lastRecv:0 };
+  try{ DD.on = localStorage.getItem('chatapp:doodle') === '1'; }catch(e){}
+  const dcv = $('#doodleCv'), dctx = dcv.getContext('2d'), dBtn = $('#doodleBtn');
+  const D_DRAW = 1100, D_HOLD = 2200, D_FADE = 900;   /* ms: se dibuja, se mantiene, se desvanece */
+  function dresize(){ const r = window.devicePixelRatio || 1; dcv.width = Math.round(innerWidth * r); dcv.height = Math.round(innerHeight * r); dctx.setTransform(r,0,0,r,0,0); }
+  addEventListener('resize', dresize); dresize();
+  function doodleClear(){ DD.list = []; dctx.save(); dctx.setTransform(1,0,0,1,0,0); dctx.clearRect(0,0,dcv.width,dcv.height); dctx.restore(); }
+  function dframe(now){
+    dctx.save(); dctx.setTransform(1,0,0,1,0,0); dctx.clearRect(0,0,dcv.width,dcv.height); dctx.restore();
+    DD.list = DD.list.filter(o => now - o.t0 < o.draw + D_HOLD + D_FADE);
+    dctx.lineCap = 'round'; dctx.lineJoin = 'round';
+    for(const o of DD.list){
+      const age = now - o.t0, fade = age > o.draw + D_HOLD ? 1 - (age - o.draw - D_HOLD) / D_FADE : 1;
+      const shown = Math.floor(Math.min(1, age / o.draw) * o.tot);
+      for(const pass of [0,1]){
+        let n = 0, stop = false;
+        for(const L of o.strokes){
+          for(let i = 0; i < L.length; i++){
+            if(++n > shown){ stop = true; break; }
+            if(i === 0) continue;
+            const p = L[i-1], q = L[i], w = q[3] * o.wsc;
+            dctx.globalAlpha = (pass ? 1 : .8) * fade;
+            dctx.strokeStyle = pass ? q[4] : '#ffffff';
+            dctx.lineWidth = pass ? w : w + 4;
+            dctx.beginPath(); dctx.moveTo(p[0], p[1]); dctx.lineTo(q[0], q[1]); dctx.stroke();
+          }
+          if(stop) break;
+        }
+      }
+    }
+    dctx.globalAlpha = 1;
+    if(DD.list.length) DD.raf = requestAnimationFrame(dframe); else DD.raf = 0;
+  }
+  function doodleFire(d){
+    const W = innerWidth, H = innerHeight, m = Math.max(24, Math.min(W,H) * .07);   /* márgenes cómodos en los cuatro lados */
+    const sz = Math.max(70, Math.min(150, Math.min(W,H) * .19));
+    const ox = Math.min(Math.max(d.x * W - sz/2, m), Math.max(m, W - m - sz));
+    const oy = Math.min(Math.max(d.y * H - sz/2, m), Math.max(m, H - m - sz));
+    DSEED = d.s;
+    const strokes = dbuild(d.k, ox, oy, sz, d.c), tot = strokes.reduce((a,b) => a + b.length, 0);
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
+    DD.list.push({ strokes, tot, wsc: sz / 80, t0: performance.now(), draw: reduce ? 1 : D_DRAW });
+    if(DD.list.length > 4) DD.list.shift();
+    if(!DD.raf) DD.raf = requestAnimationFrame(dframe);
+  }
+  function doodleSend(text){
+    if(!DD.on || !/[A-Za-zÀ-ÿñÑ]/.test(text)) return;
+    const f = dword(text), r = Math.random;
+    const d = { k: f.k || DGEN[Math.floor(r() * DGEN.length)], c: DCOL[Math.floor(r() * DCOL.length)],
+                s: Math.floor(r() * 1e9) + 1, x: .22 + r() * .56, y: .22 + r() * .56 };
+    doodleFire(d);
+    sendNet({ t:'doodle', k:d.k, c:d.c, s:d.s, x:d.x, y:d.y });
+  }
+  function doodleRecv(d){
+    const now = performance.now(); if(now - DD.lastRecv < 350) return; DD.lastRecv = now;
+    if(!d || typeof d.k !== 'string' || !Object.prototype.hasOwnProperty.call(DI, d.k) || !DCOL.includes(d.c)) return;
+    if(!Number.isFinite(d.s) || !Number.isFinite(d.x) || !Number.isFinite(d.y)) return;
+    doodleFire({ k:d.k, c:d.c, s:d.s | 0, x:Math.min(1, Math.max(0, d.x)), y:Math.min(1, Math.max(0, d.y)) });
+  }
+  function doodleUI(){ dBtn.setAttribute('aria-pressed', String(DD.on)); }
+  dBtn.addEventListener('click', () => {
+    DD.on = !DD.on; try{ localStorage.setItem('chatapp:doodle', DD.on ? '1' : '0'); }catch(e){}
+    doodleUI(); toast(DD.on ? 'Doodle activado · cada mensaje se dibuja en las dos pantallas' : 'Doodle desactivado');
+  });
+  doodleUI();
+
 
   /* ---------- Entrada de voz: manos libres. Hablas, tras ~1,2 s de silencio se envía solo y sigue escuchando ---------- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1569,6 +1819,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     SP.hist.push(['assistant', text]); if(SP.hist.length > 30) SP.hist.shift(); SP.run++;
     RV.typeUntil = 0; RV.talkUntil = performance.now() + Math.min(20000, 600 + text.length * 62);   /* el avatar mueve la boca al hablar */
     chatPush('them', text, false, true); tone(660,.12,'triangle',.04); speak(text);
+    doodleSend(text);   /* la IA también dibuja su doodle */
     simNudge();
   }
   async function simReply(nudge){
