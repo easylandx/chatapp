@@ -312,7 +312,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   <header class="top">
     <div class="brand">
       <div class="logo"><span class="appico" aria-hidden="true"></span>Chat<b>App</b><span class="cursor" aria-hidden="true"></span></div>
-      <span class="ver" id="appVer" data-noi18n title="Version">v7</span>
+      <span class="ver" id="appVer" data-noi18n title="Version">v8</span>
       <div class="time hide" id="time" role="timer" aria-live="off">00:00</div>
     </div>
     <button class="lang" id="langBtn" data-noi18n lang="en" type="button">English</button>
@@ -474,6 +474,14 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     <div class="hsleg"><span class="a"><i></i>Tu pulgar</span><span class="b"><i></i>Su pulgar</span></div>
     <p class="wres" id="shakeRes" aria-live="polite" data-noi18n></p>
     <button class="btn primary" id="shakeStart" type="button" data-es="Empezar">Empezar</button>
+  </div>
+</div>
+
+<div class="ovl" id="ttsOvl" aria-hidden="true">
+  <div class="modal ttsm" role="dialog" aria-modal="true" aria-labelledby="ttsMsg">
+    <h2 style="margin:0 0 10px;text-align:center" aria-hidden="true">🔊</h2>
+    <p id="ttsMsg" style="text-align:center;font-family:var(--serif);font-size:20px;line-height:1.3;margin:0 0 12px">Toca la pantalla después de este mensaje para activar la lectura en voz alta</p>
+    <p class="hint" style="text-align:center">Toca en cualquier sitio para continuar</p>
   </div>
 </div>
 
@@ -742,6 +750,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Mentes conectadas": "Minds connected", "Casi telepatía": "Almost telepathy", "Chispa de sintonía": "Spark of sync", "Mundos paralelos": "Parallel worlds",
     "Doodle activado · cada mensaje se dibuja en las dos pantallas": "Doodle on · every message is drawn on both screens",
     "Doodle desactivado": "Doodle off",
+    "Toca la pantalla después de este mensaje para activar la lectura en voz alta": "Touch the screen after this message to activate read-aloud", "Toca en cualquier sitio para continuar": "Tap anywhere to continue",
     "Detener Chat IA": "Stop Chat AI", "Terminar llamada": "End call", "Chat con IA detenido": "AI chat stopped", "Llamada terminada": "Call ended",
     "Palabras de la otra persona": "Other person\u2019s words", "Tiempo hablando de la otra persona": "Other person\u2019s talk time",
     "Tus palabras": "Your words", "Tu tiempo hablando": "Your talk time",
@@ -1296,7 +1305,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     Object.assign(S,{ elapsed:0, silenceLeft:0 });
     $('#silence').classList.remove('on'); $('#cue').classList.remove('show');
     chatClear(); $('#chatInput').value='';
-    setWaiting(true); render(); go('call');
+    setWaiting(true); render(); go('call'); ttsHintShow();
     RT.searching = true;
     $('#simBtn').classList.remove('hide');
     const mm = $('#matchMsg'); mm.textContent = ''; delete mm.dataset.es;
@@ -2043,6 +2052,21 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
   $('#sumOk').addEventListener('click', sumClose);
   $('#sumOvl').addEventListener('click', e => { if(e.target === $('#sumOvl')) sumClose(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && SUM.open) sumClose(); });
+
+  /* ---------- Aviso móvil (una sola vez): un toque activa la lectura en voz alta ---------- */
+  const TTS_HINT_KEY = 'chatapp:ttsHintSeen';
+  function ttsHintShow(){
+    if(!IS_TOUCH) return;
+    try{ if(localStorage.getItem(TTS_HINT_KEY)) return; localStorage.setItem(TTS_HINT_KEY, '1'); }catch(e){ return; }   /* se marca como visto al mostrarlo: no vuelve a salir */
+    const o = $('#ttsOvl'); ovlOpen(o);
+    const t0 = performance.now();
+    const hide = () => {
+      if(performance.now() - t0 < 350) return;
+      ovlClose(o); o.remove();                                   /* se elimina del todo */
+      try{ unlockAudio(); }catch(e){}                            /* el toque activa la voz del sistema */
+    };
+    o.addEventListener('click', hide); o.addEventListener('touchend', hide, { passive:true });
+  }
 
   /* ---------- Ventanas emergentes (ruleta y compatibilímetro) ---------- */
   const ovlOpen = o => { o.classList.add('open'); o.setAttribute('aria-hidden', 'false'); };
