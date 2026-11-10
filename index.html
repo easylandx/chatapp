@@ -489,7 +489,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   <div class="modal summ" role="dialog" aria-modal="true" aria-labelledby="sumTitle">
     <button class="mclose" id="sumClose" type="button" aria-label="Cerrar">&times;</button>
     <div id="sumBody" data-noi18n></div>
-    <button class="btn primary" id="sumOk" type="button">Cerrar</button>
+    <div class="row"><button class="btn wa" id="sumWa" type="button">Enviar por WhatsApp</button><button class="btn primary" id="sumOk" type="button">Cerrar</button></div>
   </div>
 </div>
 
@@ -701,6 +701,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Funciona como una app de verdad: sin descargas, sin cuenta y sin ocupar espacio.": "Works like a real app, no download, account or space needed.",
     "En el ordenador, usa el botón Instalar app de arriba, solo la primera vez.": "On desktop, use the Install app button above, first time only.",
     "Cerrar": "Close",
+    "📊 Resumen de mi charla en ChatApp": "📊 My ChatApp chat summary", "Resumen copiado · pégalo en WhatsApp (Ctrl+V)": "Summary copied · paste it in WhatsApp (Ctrl+V)", "Resumen guardado · adjúntalo en WhatsApp": "Summary saved · attach it in WhatsApp", "Resumen guardado": "Summary saved", "No se pudo crear la imagen": "Couldn\u2019t create the image",
     "Ruleta de retos": "Challenge wheel",
     "Girar": "Spin",
     "Gira la ruleta y el reto es para las dos personas.": "Spin the wheel and the challenge is for both of you.",
@@ -2005,7 +2006,7 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
     const wT = m.w + o.w, tT = m.ms + o.ms;
     const wS = wT >= 4 ? m.w / wT * 100 : null, tS = tT >= 3000 ? m.ms / tT * 100 : null;
     const sh = [wS, tS].filter(x => x != null);
-    const d = { el, mw:m.w, ow:o.w, mt:m.ms, ot:o.ms, wS, tS, wP: wT > 0 ? Math.round(m.w / wT * 100) : null, tP: tT > 0 ? Math.round(m.ms / tT * 100) : null, share:null, bal:null, act:0, score:null };
+    const d = { seed:Math.floor(Math.random() * 1e6), el, mw:m.w, ow:o.w, mt:m.ms, ot:o.ms, wS, tS, wP: wT > 0 ? Math.round(m.w / wT * 100) : null, tP: tT > 0 ? Math.round(m.ms / tT * 100) : null, share:null, bal:null, act:0, score:null };
     const wpm = wT / (el / 60), cov = tT / (el * 1000);
     d.act = Math.round(100 * Math.max(Math.min(1, wpm / 20), Math.min(1, cov / .5)));
     if(sh.length){
@@ -2016,53 +2017,172 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
     return d;
   }
   function sumInsight(d, L){
-    if(d.score == null) return L('No se ha detectado suficiente conversación para sacar conclusiones. Probad a hablar o escribir un poco más y verás el análisis.', 'Not enough conversation was detected to draw conclusions. Try talking or typing a bit more and you will get the analysis.');
-    const cls = x => x == null ? null : x >= 60 ? 'me' : x <= 40 ? 'th' : 'bal';
-    const mW = d.wS == null ? null : Math.round(d.wS), mT = d.tS == null ? null : Math.round(d.tS);
-    const cW = cls(d.wS), cT = cls(d.tS);
-    const desc = (m, c) => c === 'me' ? L('tú aportaste más (' + m + '% frente a ' + (100 - m) + '%)', 'you contributed more (' + m + '% vs ' + (100 - m) + '%)')
-      : c === 'th' ? L('la otra persona aportó más (' + (100 - m) + '% frente a ' + m + '%)', 'the other person contributed more (' + (100 - m) + '% vs ' + m + '%)')
-      : L('estuvo repartido (' + m + '% tú, ' + (100 - m) + '% la otra persona)', 'it was shared (' + m + '% you, ' + (100 - m) + '% the other person)');
-    let a;
-    if(cW && cT){
-      if(cW === cT){
-        if(cW === 'bal') a = L('Conversación equilibrada: tú aportaste el ' + mW + '% de las palabras del chat y el ' + mT + '% del tiempo hablado; la otra persona, el ' + (100 - mW) + '% y el ' + (100 - mT) + '%. Es señal de interés mutuo.',
-          'Balanced conversation: you contributed ' + mW + '% of the chat words and ' + mT + '% of the talk time; the other person ' + (100 - mW) + '% and ' + (100 - mT) + '%. That is a sign of mutual interest.');
-        else if(cW === 'me') a = L('Has llevado la conversación: el ' + mW + '% de las palabras del chat y el ' + mT + '% del tiempo hablado fueron tuyos. Haz más preguntas abiertas para dar espacio a la otra persona.',
-          'You led the conversation: ' + mW + '% of the chat words and ' + mT + '% of the talk time were yours. Try more open questions to give the other person room.');
-        else a = L('La otra persona ha llevado la conversación: aportó el ' + (100 - mW) + '% de las palabras del chat y el ' + (100 - mT) + '% del tiempo hablado. Has escuchado mucho; contar un poco más de ti puede profundizar la charla.',
-          'The other person led the conversation: ' + (100 - mW) + '% of the chat words and ' + (100 - mT) + '% of the talk time. You listened a lot; sharing a bit more of yourself can deepen the chat.');
-      } else {
-        /* palabras y tiempo cuentan historias distintas: se explican por separado, sin promediarlas */
-        a = L('El chat y la voz no cuentan lo mismo. En palabras del chat, ' + desc(mW, cW) + '; hablando, ' + desc(mT, cT) + '.',
-          'Chat and voice tell different stories. In chat words, ' + desc(mW, cW) + '; in talk time, ' + desc(mT, cT) + '.');
-      }
+    if(d.score == null) return L("No se ha detectado suficiente conversación para sacar conclusiones. Probad a hablar o escribir un poco más y verás el análisis.", "Not enough conversation was detected to draw conclusions. Try talking or typing a bit more and you will get the analysis.");
+    const seed = d.seed || 0, pk = (arr, o) => arr[(seed + (o || 0)) % arr.length];
+    const cls = x => x == null ? null : x >= 60 ? "me" : x <= 40 ? "th" : "bal";
+    const cW = cls(d.wS), cT = cls(d.tS), both = cW && cT;
+    const big = d.share != null && (d.share >= 75 || d.share <= 25);
+    let obs, tip;
+    if(both && cW !== cT){
+      const open = pk([L("El chat y la voz contaron historias distintas. ", "Chat and voice told different stories. "), L("Aquí el texto y la voz no fueron a la par. ", "Text and voice did not move in step here. ")], 0);
+      const M = {
+        thme: [L("La otra persona escribió más, pero tú tomaste el micrófono cuando tocaba hablar.", "The other person wrote more, but you took the floor whenever you spoke."),
+               L("Prueba a igualar su esfuerzo por escrito con algo más de detalle, y deja huecos cuando hables.", "Try matching their effort in writing with a bit more detail, and leave gaps when you speak.")],
+        thbal: [L("La otra persona escribió más, mientras que la voz estuvo repartida.", "The other person wrote more, while voice time was shared."),
+                L("Añade un poco más por escrito para equilibrar el chat; en voz ya funcionáis bien.", "Add a little more in writing to even out the chat; in voice you are already in sync.")],
+        meth: [L("Tú escribiste más, pero la otra persona fue quien más habló.", "You wrote more, but the other person did most of the talking."),
+               L("Si a la otra persona le va la voz, respóndele hablando más y escribiendo menos.", "If the other person prefers voice, answer by speaking more and typing less.")],
+        mebal: [L("Tú escribiste más, aunque el tiempo de voz estuvo repartido.", "You wrote more, although voice time was shared."),
+                L("Deja que algunas ideas salgan hablando en lugar de escribirlas; dará más ritmo.", "Let some ideas come out in speech rather than text; it adds rhythm.")],
+        balme: [L("El chat estuvo repartido, pero la voz fue sobre todo tuya.", "The chat was shared, but the voice was mostly yours."),
+                L("Haz pausas más largas al hablar y pregunta algo abierto para que la otra persona entre.", "Pause longer when you speak and ask something open so the other person can step in.")],
+        balth: [L("El chat estuvo repartido, pero la voz fue sobre todo de la otra persona.", "The chat was shared, but the voice was mostly the other person's."),
+                L("Anímate a contar algo tuyo en voz alta; ya participas bien por escrito.", "Dare to share something of yours out loud; you already take part well in writing.")]
+      };
+      const m = M[cW + cT]; obs = open + m[0]; tip = m[1];
     } else {
-      const m = cW ? mW : mT, c = cW || cT, dim = cW ? L('palabras', 'words') : L('tiempo hablado', 'talk time');
-      if(c === 'bal') a = L('Conversación equilibrada en ' + dim + ': ' + m + '% tú y ' + (100 - m) + '% la otra persona.', 'Balanced in ' + dim + ': ' + m + '% you and ' + (100 - m) + '% the other person.');
-      else if(c === 'me') a = L('Has llevado la conversación en ' + dim + ': el ' + m + '% fue tuyo. Haz más preguntas abiertas para dar espacio a la otra persona.', 'You led in ' + dim + ': ' + m + '% was yours. Try more open questions to give the other person room.');
-      else a = L('La otra persona ha llevado la conversación en ' + dim + ' (' + (100 - m) + '%). Contar un poco más de ti puede profundizar la charla.', 'The other person led in ' + dim + ' (' + (100 - m) + '%). Sharing a bit more of yourself can deepen the chat.');
+      const c = both ? cW : (cW || cT);
+      const dim = both ? "" : (cW ? L("En el chat, ", "In the chat, ") : L("Al hablar, ", "In voice, "));
+      const cap = s => dim ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+      let o, t;
+      if(c === "bal"){
+        o = [L("Los dos tuvisteis un espacio parecido, señal clara de interés mutuo.", "You both had a similar amount of room, a clear sign of mutual interest."),
+             L("Los turnos estuvieron bien repartidos: nadie cargó con la charla en solitario.", "Turns were nicely shared: nobody carried the chat alone."),
+             L("Se sintió como un ida y vuelta real y no como un monólogo.", "It felt like a real back-and-forth rather than a monologue.")];
+        t = [L("Para ir más a fondo, pasad de la charla ligera a una anécdota o una opinión: las charlas equilibradas lo aguantan bien.", "To go deeper, move from small talk to a story or an opinion: balanced chats handle that well."),
+             L("Mantened el ritmo y añadid una pregunta personal; convierte un buen intercambio en uno memorable.", "Keep the rhythm and add one personal question; it turns a good exchange into a memorable one."),
+             L("Siguiente paso: elegid un tema que os haya hecho reaccionar a los dos y quedaos en él unos turnos más.", "Next step: pick a topic you both reacted to and stay with it for a few more turns.")];
+      } else if(c === "me"){
+        o = big ? [L("Llevaste casi toda la conversación tú solo o sola.", "You carried almost the whole conversation yourself."),
+                   L("La otra persona apenas tuvo espacio: casi todo giró en torno a ti.", "The other person had little room: almost everything revolved around you."),
+                   L("Fue más una charla tuya que una conversación a dos.", "It was more your talk than a conversation between two.")]
+                : [L("Marcaste el ritmo de la charla y ocupaste la mayor parte del espacio.", "You set the pace of the chat and filled most of the space."),
+                   L("Tuviste la iniciativa casi todo el rato.", "You held the initiative most of the time."),
+                   L("Fuiste la voz principal de esta conversación.", "You were the main voice of this conversation.")];
+        t = [L("Termina tus mensajes con una pregunta abierta y deja una pausa; el silencio invita a entrar.", "End your messages with an open question and leave a pause; silence invites the other person in."),
+             L("Prueba a hablar un poco menos y preguntar más veces «¿y tú?».", "Try talking a little less and asking “and you?” more often."),
+             L("Intervenciones más cortas le dan a la otra persona una entrada más fácil.", "Shorter turns give the other person an easier way to jump in.")];
+      } else {
+        o = big ? [L("La otra persona hizo casi todo el hablar mientras tú escuchabas.", "The other person did nearly all the talking while you listened."),
+                   L("Casi todo el espacio fue de la otra persona; tú te quedaste en segundo plano.", "Almost all the space went to the other person; you stayed in the background."),
+                   L("Escuchaste mucho, pero aportaste poco de ti.", "You listened a lot but shared little of yourself.")]
+                : [L("La otra persona llevó la voz cantante y tú escuchaste más.", "The other person led and you listened more."),
+                   L("Dejaste mucho espacio a la otra persona, y eso se nota.", "You left plenty of room for the other person, and it shows."),
+                   L("La conversación se apoyó más en la otra persona que en ti.", "The conversation leaned more on the other person than on you.")];
+        t = [L("Escuchar es una virtud, pero cuenta un detalle u opinión tuya para que se sienta mutuo.", "Listening is a strength, but share a detail or opinion of your own to make it feel mutual."),
+             L("La próxima vez ofrece una pequeña anécdota tuya antes de lanzar la siguiente pregunta.", "Next time offer a short story from your side before asking the next question."),
+             L("Responde con una reacción y algo sobre ti, no solo con otra pregunta.", "Reply with a reaction plus one thing about you, not just another question.")];
+      }
+      obs = dim + cap(pk(o, 1)); tip = pk(t, 2);
     }
-    if(d.act < 35) a += L(' Fue una charla tranquila, con bastante silencio; una pregunta curiosa ayuda a arrancar.', ' It was a quiet chat with plenty of silence; a curious question helps get things going.');
-    else if(d.act >= 80) a += L(' En conjunto, la charla fue muy activa: apenas hubo silencios.', ' Overall the chat was very active: hardly any silences.');
-    return a;
+    let act;
+    if(d.act < 35) act = pk([L("El ritmo fue tranquilo, con bastantes silencios.", "The pace was quiet, with plenty of silence."), L("Hubo mucho aire entre mensajes; fue una charla pausada.", "There was a lot of air between messages; it was a slow chat.")], 3);
+    else if(d.act < 60) act = pk([L("El ritmo fue relajado, con pausas naturales.", "The pace was relaxed, with natural pauses."), L("La charla fluyó sin prisa y sin silencios incómodos.", "The chat flowed unhurried, without awkward silences.")], 3);
+    else if(d.act < 80) act = pk([L("El ritmo fue constante y cómodo.", "The pace was steady and comfortable."), L("La conversación se mantuvo viva casi todo el rato.", "The conversation stayed alive most of the time.")], 3);
+    else act = pk([L("Fue una charla muy viva: apenas hubo silencios.", "It was a very lively chat: hardly any silences."), L("El ritmo fue intenso, casi sin respiro entre mensajes.", "The pace was intense, with almost no breathing room between messages.")], 3);
+    let extra = "";
+    if(d.act < 35) extra = " " + L("Una pregunta curiosa ayuda a arrancar.", "A curious question helps get things going.");
+    if(d.el < 45) extra += " " + L("Fue una charla muy corta: dadle unos minutos más antes de valorar el equilibrio.", "It was a very short chat: give it a few more minutes before judging the balance.");
+    return obs + " " + act + " " + tip + extra;
+  }
+  function sumModel(d, L){
+    const bands = [[85, "Ritmo perfecto", "Perfect rhythm", "🎯"], [70, "Gran equilibrio", "Great balance", "⚖️"], [50, "Buena charla", "Good flow", "💬"], [30, "Charla desigual", "One-sided chat", "↔️"], [0, "Calentando motores", "Just warming up", "🌱"]];
+    const b = d.score == null ? null : bands.find(x => d.score >= x[0]);
+    return { band: b ? b[3] + " " + L(b[1], b[2]) : L("Sin datos suficientes", "Not enough data"), insight: sumInsight(d, L) };
   }
   function sumRender(){
-    const d = SUM.snap, box = $('#sumBody'); if(!d || !box) return;
-    const L = (es, en) => LANG === 'en' ? en : es;
-    const bands = [[85, 'Ritmo perfecto', 'Perfect rhythm', '🎯'], [70, 'Gran equilibrio', 'Great balance', '⚖️'], [50, 'Buena charla', 'Good flow', '💬'], [30, 'Charla desigual', 'One-sided chat', '↔️'], [0, 'Calentando motores', 'Just warming up', '🌱']];
-    const b = d.score == null ? null : bands.find(x => d.score >= x[0]);
-    const row = (label, a, c, p) => '<div class="sumrow"><div class="sumhead"><span>' + a + (p == null ? '' : ' · ' + p + '%') + '</span><strong>' + label + '</strong><span>' + c + (p == null ? '' : ' · ' + (100 - p) + '%') + '</span></div><div class="sbar"><i class="a" style="width:' + (p == null ? 50 : p) + '%' + (p == null ? ';opacity:.25' : '') + '"></i><i class="b" style="width:' + (p == null ? 50 : 100 - p) + '%' + (p == null ? ';opacity:.25' : '') + '"></i></div></div>';
-    const bar = (label, v) => '<div class="crow"><span>' + label + '</span><div class="cbar"><i style="width:' + (v == null ? 0 : v) + '%"></i></div></div>';
-    box.innerHTML = '<h2 id="sumTitle">' + L('Resumen de la charla', 'Chat summary') + '</h2>' +
-      '<div class="gauge" style="--p:' + (d.score || 0) + '"><b>' + (d.score == null ? '–' : d.score) + '</b></div>' +
-      '<p class="ctitle">' + (b ? b[3] + ' ' + L(b[1], b[2]) : L('Sin datos suficientes', 'Not enough data')) + '</p>' +
-      '<div class="sumleg"><span class="a"><i></i>' + L('Tú', 'You') + '</span><span class="b"><i></i>' + L('Otra persona', 'Other person') + '</span></div>' +
-      row(L('Palabras', 'Words'), d.mw, d.ow, d.wP) + row(L('Tiempo hablando', 'Talk time'), stFmt(d.mt), stFmt(d.ot), d.tP) +
-      '<p class="hint" style="margin:-4px 0 12px">' + L('Las palabras cuentan los mensajes del chat (también los dictados por voz); el tiempo hablando mide la voz, incluida la que lee los mensajes en voz alta.', 'Words count chat messages (voice-dictated ones too); talk time measures voice, including the voice that reads messages aloud.') + '</p>' +
-      '<div class="cbars">' + bar(L('Equilibrio', 'Balance'), d.bal) + bar(L('Actividad', 'Activity'), d.act) + '</div>' +
-      '<div class="sinsight"><b>' + L('CONCLUSIÓN', 'INSIGHT') + '</b>' + sumInsight(d, L) + '</div>';
+    const d = SUM.snap, box = $("#sumBody"); if(!d || !box) return;
+    const L = (es, en) => LANG === "en" ? en : es, mod = sumModel(d, L);
+    const row = (label, a, c, p) => "<div class=\"sumrow\"><div class=\"sumhead\"><span>" + a + (p == null ? "" : " · " + p + "%") + "</span><strong>" + label + "</strong><span>" + c + (p == null ? "" : " · " + (100 - p) + "%") + "</span></div><div class=\"sbar\"><i class=\"a\" style=\"width:" + (p == null ? 50 : p) + "%" + (p == null ? ";opacity:.25" : "") + "\"></i><i class=\"b\" style=\"width:" + (p == null ? 50 : 100 - p) + "%" + (p == null ? ";opacity:.25" : "") + "\"></i></div></div>";
+    const bar = (label, v) => "<div class=\"crow\"><span>" + label + "</span><div class=\"cbar\"><i style=\"width:" + (v == null ? 0 : v) + "%\"></i></div></div>";
+    box.innerHTML = "<h2 id=\"sumTitle\">" + L("Resumen de la charla", "Chat summary") + "</h2>" +
+      "<div class=\"gauge\" style=\"--p:" + (d.score || 0) + "\"><b>" + (d.score == null ? "–" : d.score) + "</b></div>" +
+      "<p class=\"ctitle\">" + mod.band + "</p>" +
+      "<div class=\"sumleg\"><span class=\"a\"><i></i>" + L("Tú", "You") + "</span><span class=\"b\"><i></i>" + L("Otra persona", "Other person") + "</span></div>" +
+      row(L("Palabras", "Words"), d.mw, d.ow, d.wP) + row(L("Tiempo hablando", "Talk time"), stFmt(d.mt), stFmt(d.ot), d.tP) +
+      "<div class=\"cbars\">" + bar(L("Equilibrio", "Balance"), d.bal) + bar(L("Actividad", "Activity"), d.act) + "</div>" +
+      "<div class=\"sinsight\"><b>" + L("CONCLUSIÓN", "INSIGHT") + "</b>" + mod.insight + "</div>";
+    sumDraw();
   }
+  /* Imagen del resumen (para compartir) */
+  function sumDraw(){
+    const d = SUM.snap; SUM.blob = null; if(!d) return;
+    const L = (es, en) => LANG === "en" ? en : es, mod = sumModel(d, L);
+    const W = 1080, SER = "Georgia, \"Iowan Old Style\", \"Times New Roman\", serif", MONO = "ui-monospace, Menlo, monospace";
+    const INK = "#12354d", DIM = "#4f7f9f", CA = "#4fa8d8", CB = "#e8a24a";
+    const c = document.createElement("canvas"); c.width = W; c.height = 400;
+    let x = c.getContext("2d");
+    x.font = "30px " + SER;
+    const lines = cardWrap(x, mod.insight, W - 200);
+    const H = 1130 + lines.length * 44; c.height = H; x = c.getContext("2d");
+    const rr = (X, Y, w, h, r) => { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); };
+    const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#fffdf7"); g.addColorStop(1, "#eaf6ff");
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.strokeStyle = "#89cff0"; x.lineWidth = 10; x.strokeRect(5, 5, W - 10, H - 10);
+    x.setLineDash([14, 10]); x.strokeStyle = CA; x.lineWidth = 2; x.strokeRect(24, 24, W - 48, H - 48); x.setLineDash([]);
+    x.textAlign = "center"; x.textBaseline = "alphabetic";
+    x.font = "700 22px " + MONO; x.fillStyle = "#2b7fb0"; x.fillText("ChatApp", W / 2, 96);
+    x.font = "italic 500 58px " + SER; x.fillStyle = INK; x.fillText(L("Resumen de la charla", "Chat summary"), W / 2, 170);
+    const cy = 330, R = 120;
+    x.lineWidth = 26; x.lineCap = "round"; x.strokeStyle = "#dff1ff"; x.beginPath(); x.arc(W / 2, cy, R, 0, Math.PI * 2); x.stroke();
+    if(d.score){ x.strokeStyle = CA; x.beginPath(); x.arc(W / 2, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * d.score / 100); x.stroke(); }
+    x.fillStyle = INK; x.font = "500 84px " + SER; x.textBaseline = "middle"; x.fillText(d.score == null ? "–" : String(d.score), W / 2, cy + 4);
+    x.textBaseline = "alphabetic";
+    x.font = "600 38px " + SER; x.fillText(mod.band, W / 2, 530);
+    x.font = "20px " + MONO; x.fillStyle = DIM;
+    x.fillStyle = CA; x.beginPath(); x.arc(W / 2 - 120, 580, 8, 0, Math.PI * 2); x.fill();
+    x.fillStyle = DIM; x.textAlign = "left"; x.fillText(L("Tú", "You"), W / 2 - 104, 587);
+    x.fillStyle = CB; x.beginPath(); x.arc(W / 2 + 30, 580, 8, 0, Math.PI * 2); x.fill();
+    x.fillStyle = DIM; x.fillText(L("Otra persona", "Other person"), W / 2 + 46, 587);
+    const split = (y, label, a, b, p) => {
+      x.font = "22px " + MONO; x.fillStyle = INK; x.textAlign = "left"; x.fillText(a + (p == null ? "" : " · " + p + "%"), 100, y);
+      x.textAlign = "center"; x.font = "700 22px " + MONO; x.fillText(label, W / 2, y);
+      x.textAlign = "right"; x.font = "22px " + MONO; x.fillText(b + (p == null ? "" : " · " + (100 - p) + "%"), W - 100, y);
+      const bw = W - 200, pw = p == null ? bw / 2 : bw * p / 100;
+      x.save(); rr(100, y + 18, bw, 22, 11); x.clip();
+      x.fillStyle = "#dff1ff"; x.fillRect(100, y + 18, bw, 22);
+      if(p != null){ x.fillStyle = CA; x.fillRect(100, y + 18, pw, 22); x.fillStyle = CB; x.fillRect(100 + pw, y + 18, bw - pw, 22); }
+      x.restore();
+    };
+    split(660, L("Palabras", "Words"), d.mw, d.ow, d.wP);
+    split(760, L("Tiempo hablando", "Talk time"), stFmt(d.mt), stFmt(d.ot), d.tP);
+    const meter = (y, label, v) => {
+      x.textAlign = "left"; x.font = "22px " + MONO; x.fillStyle = INK; x.fillText(label, 100, y + 5);
+      x.save(); rr(340, y - 12, W - 440, 20, 10); x.clip(); x.fillStyle = "#dff1ff"; x.fillRect(340, y - 12, W - 440, 20);
+      x.fillStyle = CA; x.fillRect(340, y - 12, (W - 440) * (v || 0) / 100, 20); x.restore();
+    };
+    meter(880, L("Equilibrio", "Balance"), d.bal); meter(935, L("Actividad", "Activity"), d.act);
+    const bh = 90 + lines.length * 44;
+    rr(70, 990, W - 140, bh, 18); x.fillStyle = "rgba(137,207,240,.14)"; x.fill();
+    x.setLineDash([8, 6]); x.strokeStyle = CA; x.lineWidth = 2; x.stroke(); x.setLineDash([]);
+    x.textAlign = "left"; x.font = "700 20px " + MONO; x.fillStyle = "#2b7fb0"; x.fillText(L("CONCLUSIÓN", "INSIGHT"), 100, 1036);
+    x.font = "30px " + SER; x.fillStyle = INK; lines.forEach((l, i) => x.fillText(l, 100, 1086 + i * 44));
+    x.textAlign = "center"; x.font = "17px " + MONO; x.fillStyle = DIM; x.fillText("ChatApp · easylandx.github.io/chatapp", W / 2, H - 46);
+    try{ c.toBlob(b => { SUM.blob = b; }, "image/png"); }catch(e){}
+  }
+  function sumSave(quiet){
+    if(!SUM.blob){ toast("No se pudo crear la imagen"); return false; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(SUM.blob); a.download = "chatapp-resumen.png";
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    if(!quiet) toast("Resumen guardado");
+    return true;
+  }
+  function sumSend(){
+    if(!SUM.blob){ sumDraw(); toast("No se pudo crear la imagen"); return; }
+    const txt = T("📊 Resumen de mi charla en ChatApp") + " · https://easylandx.github.io/chatapp/";
+    const file = new File([SUM.blob], "chatapp-resumen.png", { type:"image/png" });
+    /* móvil: la hoja de compartir del sistema lleva la imagen adjunta directa a WhatsApp */
+    if(IS_TOUCH && navigator.canShare && navigator.canShare({ files:[file] })){ navigator.share({ files:[file], text:txt }).catch(() => {}); return; }
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent), q = encodeURIComponent(txt);
+    const url = mobile ? "whatsapp://send?text=" + q : "https://web.whatsapp.com/send?text=" + q;
+    if(!mobile && navigator.clipboard && window.ClipboardItem){
+      navigator.clipboard.write([new ClipboardItem({ "image/png": SUM.blob })])
+        .then(() => toast("Resumen copiado · pégalo en WhatsApp (Ctrl+V)", 6000))
+        .catch(() => { sumSave(true); toast("Resumen guardado · adjúntalo en WhatsApp", 6000); });
+    } else { sumSave(true); toast("Resumen guardado · adjúntalo en WhatsApp", 6000); }
+    if(mobile) location.href = url; else window.open(url, "_blank", "noopener");
+  }
+  $("#sumWa").addEventListener("click", sumSend);
   function sumShow(snap){
     SUM.snap = snap; SUM.open = true; sumRender(); ovlOpen($('#sumOvl'));
     try{ chimeEnd(); }catch(e){}
