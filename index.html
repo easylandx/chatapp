@@ -148,6 +148,9 @@ h1 em{font-style:italic;color:var(--accent-ink)}
 .ctl:hover{border-color:var(--dim)}
 .ctl[aria-pressed="true"]{border-color:var(--accent-ink);color:var(--accent-ink)}
 .ctl.quiet{margin-left:auto;color:var(--dim)}
+.ctl.end{background:#ffe3e0;border-color:#e57373;color:#7a1f1f;font-weight:700}
+.ctl.end:hover{background:#ffd0cb;border-color:#d25a5a}
+.ctl.stopai{border-color:var(--accent-ink);color:var(--accent-ink);font-weight:700}
 #resetBtn[data-armed]{background:var(--amber);color:#0b2a40;border-color:var(--accent-ink);font-weight:700}
 
 /* invite */
@@ -281,6 +284,27 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
 .shakem .telbig{min-height:56px}
 
 
+
+/* Contadores de palabras y tiempo de habla */
+.stats{position:absolute;left:8px;bottom:8px;display:flex;gap:6px;flex-wrap:wrap;z-index:4;pointer-events:none}
+.pip .stats{left:0;right:0;bottom:4px;justify-content:center;gap:3px;padding:0 3px}
+.stchip{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);background:rgba(255,255,255,.85);border:1px solid var(--line);border-radius:999px;padding:2px 8px;white-space:nowrap;transition:background .15s,border-color .15s}
+.pip .stchip{font-size:9.5px;padding:1px 6px}
+.stchip.talk{background:var(--amber);border-color:var(--amber-d);color:#0b2a40}
+.waiting #stR{display:none}
+/* Resumen final */
+.summ{text-align:center;width:min(480px,100%)}
+.summ h2{margin:0 34px 12px 34px;text-align:center}
+.summ .sumrow{text-align:left;margin:0 0 12px}
+.summ .sumhead{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
+.summ .sbar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--panel2)}
+.summ .sbar i{display:block;height:100%;transition:width .8s ease}
+.summ .sbar .a{background:var(--amber-d)}.summ .sbar .b{background:#e8a24a}
+.summ .sumleg{display:flex;justify-content:center;gap:16px;font-size:12px;color:var(--dim);margin:0 0 12px}
+.summ .sumleg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.summ .sumleg .a i{background:var(--amber-d)}.summ .sumleg .b i{background:#e8a24a}
+.summ .sinsight{text-align:left;border:1px dashed var(--amber-d);background:rgba(137,207,240,.08);border-radius:12px;padding:12px 14px;margin:6px 0 16px;font-size:13.5px}
+.summ .sinsight b{display:block;color:var(--accent-ink);letter-spacing:.12em;font-size:11px;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -288,7 +312,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   <header class="top">
     <div class="brand">
       <div class="logo"><span class="appico" aria-hidden="true"></span>Chat<b>App</b><span class="cursor" aria-hidden="true"></span></div>
-      <span class="ver" id="appVer" data-noi18n title="Version">v2</span>
+      <span class="ver" id="appVer" data-noi18n title="Version">v7</span>
       <div class="time hide" id="time" role="timer" aria-live="off">00:00</div>
     </div>
     <button class="lang" id="langBtn" data-noi18n lang="en" type="button">English</button>
@@ -319,6 +343,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         <video id="remoteVid" class="hide" autoplay playsinline muted></video>
         <audio id="remoteAud" autoplay playsinline style="display:none"></audio>
         <div class="tag" id="tag"></div>
+        <div class="stats" id="stR"><span class="stchip" id="stThWc" title="Palabras de la otra persona">💬 <b id="stThW" data-noi18n>0</b></span><span class="stchip" id="stThTc" title="Tiempo hablando de la otra persona">🎙 <b id="stThT" data-noi18n>00:00</b></span></div>
         <div class="cue" id="cue" role="status"></div>
         <div class="silence" id="silence"><div>Silencio cómodo<small id="silenceTxt" data-noi18n>Respirar también es conversar · 30 s</small></div></div>
         <div class="waitov" id="waitOv">
@@ -328,7 +353,8 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
             <div style="margin-top:12px"><button class="link hide" id="simBtn" data-es="Chat con IA">Chat con IA</button></div>
           </div>
         </div>
-        <div class="pip" id="pip"><video id="local" autoplay playsinline muted></video><div class="off" id="pipOff">Cámara apagada</div></div>
+        <div class="pip" id="pip"><video id="local" autoplay playsinline muted></video><div class="off" id="pipOff">Cámara apagada</div>
+          <div class="stats" id="stL"><span class="stchip" id="stMeWc" title="Tus palabras">💬 <b id="stMeW" data-noi18n>0</b></span><span class="stchip" id="stMeTc" title="Tu tiempo hablando">🎙 <b id="stMeT" data-noi18n>00:00</b></span></div></div>
       </div>
       </div>
       <aside class="chatwrap"><div class="chat">
@@ -348,7 +374,10 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         <button class="ctl" id="benchBtn" type="button" aria-pressed="false" data-es="Modo Same-Bench">Modo Same-Bench</button>
         <button class="ctl" id="doodleBtn" type="button" aria-pressed="false" data-noi18n>Doodle</button>
         <button class="ctl hide" id="avPauseBtn" type="button" aria-pressed="false" data-es="Pausar avatar IA">Pausar avatar IA</button>
+        <button class="ctl stopai hide" id="aiStopBtn" type="button" data-es="Detener Chat IA">Detener Chat IA</button>
         <button class="ctl" id="aiBtn" aria-pressed="false" title="La IA chatea por ti. Si las dos personas la activan, las IA hablan entre sí.">Modo IA: no</button>
+        <button class="ctl" id="readMeBtn" type="button" aria-pressed="true" data-es="Leer mis mensajes: sí" title="Lee en voz alta lo que escribes tú (también en modo IA)">Leer mis mensajes: sí</button>
+        <button class="ctl" id="readThBtn" type="button" aria-pressed="true" data-es="Leer los suyos: sí" title="Lee en voz alta lo que escribe la otra persona (o su IA)">Leer los suyos: sí</button>
         <button class="ctl" id="avatarBtn" type="button" data-es="Subir avatar">Subir avatar</button>
         <button class="ctl hide" id="avatarRm" type="button" data-es="Quitar avatar">Quitar avatar</button>
         <input type="file" id="avatarFile" accept="image/*" hidden>
@@ -358,6 +387,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         <button class="ctl" id="pianoBtn" type="button">Dúo musical</button>
         <button class="ctl" id="cardBtn" type="button">Postal de recuerdo</button>
         <button class="ctl" id="shakeBtn" type="button">Apretón de manos digital</button>
+        <button class="ctl end" id="endBtn" type="button" data-es="Terminar llamada">Terminar llamada</button>
         <button class="ctl quiet" id="resetBtn" type="button" data-es="Reiniciar">Reiniciar</button>
       </div>
       <div class="invite hide" id="invite">
@@ -447,6 +477,14 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   </div>
 </div>
 
+<div class="ovl" id="sumOvl" aria-hidden="true">
+  <div class="modal summ" role="dialog" aria-modal="true" aria-labelledby="sumTitle">
+    <button class="mclose" id="sumClose" type="button" aria-label="Cerrar">&times;</button>
+    <div id="sumBody" data-noi18n></div>
+    <button class="btn primary" id="sumOk" type="button">Cerrar</button>
+  </div>
+</div>
+
 <div class="ovl" id="aboutOvl" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
     <button class="mclose" id="aboutClose" type="button" aria-label="Cerrar">&times;</button>
@@ -468,6 +506,8 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       <li>Postales de recuerdo</li>
       <li>Apretón de manos digital</li>
       <li>Doodles en directo</li>
+      <li>Contadores de palabras y tiempo de habla</li>
+      <li>Resumen final con puntuación</li>
       <li>Inglés y español</li>
     </ul>
     <p class="strong">Funciona en el navegador.</p>
@@ -587,6 +627,11 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Modo normal": "Standard view",
     "Modo IA: sí": "AI mode: on",
     "Modo IA: no": "AI mode: off",
+    "Leer mis mensajes: sí": "Read my messages: on", "Leer mis mensajes: no": "Read my messages: off",
+    "Leer los suyos: sí": "Read theirs: on", "Leer los suyos: no": "Read theirs: off",
+    "Lee en voz alta lo que escribes tú (también en modo IA)": "Reads aloud what you write (AI mode too)",
+    "Lee en voz alta lo que escribe la otra persona (o su IA)": "Reads aloud what the other person (or their AI) writes",
+    "Lectura activada, pero el sonido está desactivado · actívalo arriba": "Read-aloud is on, but sound is off \u00b7 turn it on at the top",
     "Pausar avatar IA": "Pause AI avatar", "Reanudar avatar IA": "Resume AI avatar",
     "Avatar IA en pausa · no responderá hasta que lo reanudes": "AI avatar paused · it won\u2019t reply until you resume it",
     "Avatar IA reanudado": "AI avatar resumed",
@@ -697,6 +742,10 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Mentes conectadas": "Minds connected", "Casi telepatía": "Almost telepathy", "Chispa de sintonía": "Spark of sync", "Mundos paralelos": "Parallel worlds",
     "Doodle activado · cada mensaje se dibuja en las dos pantallas": "Doodle on · every message is drawn on both screens",
     "Doodle desactivado": "Doodle off",
+    "Detener Chat IA": "Stop Chat AI", "Terminar llamada": "End call", "Chat con IA detenido": "AI chat stopped", "Llamada terminada": "Call ended",
+    "Palabras de la otra persona": "Other person\u2019s words", "Tiempo hablando de la otra persona": "Other person\u2019s talk time",
+    "Tus palabras": "Your words", "Tu tiempo hablando": "Your talk time",
+    "Contadores de palabras y tiempo de habla": "Word and talk-time counters", "Resumen final con puntuación": "End-of-chat score and insight",
   };
   const T = s => (LANG === 'en' && Object.prototype.hasOwnProperty.call(EN, s)) ? EN[s] : s;
   const setT = (el, es) => { el.dataset.es = es; el.textContent = T(es); };
@@ -739,7 +788,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     document.title = T(TITLE_ES); META.content = T(META_ES);
     applyStatic();
     document.querySelectorAll('[data-es]').forEach(el => { el.textContent = T(el.dataset.es); });
-    renderDone(); updateWa(); voiceLabel(); wheelRes(); compRender(false); telRender(); hsRender(); cardRedraw();
+    renderDone(); updateWa(); voiceLabel(); wheelRes(); compRender(false); telRender(); hsRender(); cardRedraw(); sumRender();
     const b = $('#langBtn');
     b.textContent = LANG === 'en' ? 'Espa\u00f1ol' : 'English';
     b.lang = LANG === 'en' ? 'es' : 'en';
@@ -1069,6 +1118,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     if(RT.roomId) rewait(); else endCall('early', true);   /* anfitrión: sigues en la sala con el mismo enlace */
   }
   function rewait(){
+    const snap = (RT.started || SP.on) ? sumCalc() : null;
     simT.forEach(clearTimeout); simT = []; clearTimeout(AI.t); simStop(); clearTimeout(S.callWd);
     clearInterval(S.timer); cancelAnimationFrame(S.raf); clearInterval(S.audT);
     try{ speechSynthesis.cancel(); }catch(e){}
@@ -1086,6 +1136,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     setWaiting(true); render(); RT.searching = true;
     $('#simBtn').classList.remove('hide'); $('#invite').classList.remove('hide');
     findPartner();
+    if(snap) sumShow(snap);
   }
   function onMsg(d, c){
     if(d.t === 'hello'){
@@ -1297,6 +1348,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     render();
   }
   function endCall(reason, quiet){
+    const snap = (reason !== 'report' && (RT.started || SP.on)) ? sumCalc() : null;
     simT.forEach(clearTimeout); simT = []; clearTimeout(AI.t); simStop();
     clearInterval(S.timer); cancelAnimationFrame(S.raf); stopCam(); try{ speechSynthesis.cancel(); }catch(e){}
     if(RT.real){ RT.started=false; try{ if(RT.conn && !quiet && reason!=='done') RT.conn.send({t:'leave'}); }catch(e){}
@@ -1305,6 +1357,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     $('#silence').classList.remove('on');
     if(reason==='report'){ go('landing'); toast('Llamada cerrada · no volverás a coincidir con esa persona'); return; }
     DONE=null; closeNet(); go('landing');
+    if(snap) sumShow(snap);
   }
 
   /* ---------- Chat de texto ---------- */
@@ -1318,13 +1371,19 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     if(cls === 'me' || cls === 'them') d.dataset.src = text;
     box.appendChild(d); box.scrollTop = box.scrollHeight;
     if(cls === 'me' || cls === 'them'){ AI.seq++; AI.hist.push([cls === 'me' ? 'assistant' : 'user', text]); if(AI.hist.length > 30) AI.hist.shift(); }
+    if(cls === 'me' || cls === 'them'){
+      const o = ST[cls], now = performance.now(); o.w += stWords(text);
+      /* un mensaje escrito cuenta como habla el tiempo que se tardaría en decirlo (igual para los dos lados); un dictado por voz ya se detectó en el micrófono */
+      if(o.skip) o.skip = false; else o.until = Math.max(now, o.until) + Math.min(20000, 400 + String(text).length * 75);
+      stRender();
+    }
     if(cls === 'them') aiIncoming();
     return d;
   }
   function chatClear(){
     simT.forEach(clearTimeout); simT = []; simI = 0; simStop();
     clearTimeout(AI.t); AI.hist = []; AI.run = 0; AI.seq++; AI.persona = null;
-    doodleClear();
+    doodleClear(); stReset();
     $('#msgs').innerHTML = '';
   }
   function keepU(u){ (window._utts = window._utts || []).push(u); if(window._utts.length > 20) window._utts.shift(); }  /* evita que iOS/Chrome descarten la locución */
@@ -1336,13 +1395,17 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     if(on){ duckN++; S.stream.getAudioTracks().forEach(t => { t.enabled = false; }); }
     else { duckN = Math.max(0, duckN - 1); if(!duckN) S.stream.getAudioTracks().forEach(t => { t.enabled = S.micOn; }); }
   }
-  function speak(text, inGesture){
+  /* Lectura en voz alta: un interruptor por participante (guardado en el navegador) */
+  const TTSP = { me:true, them:true };
+  try{ const j = JSON.parse(localStorage.getItem('chatapp:tts') || 'null'); if(j){ TTSP.me = j.me !== false; TTSP.them = j.them !== false; } }catch(e){}
+  function speak(text, inGesture, who){
     if(!S.soundOn || !('speechSynthesis' in window)) return;
     try{
       const u = new SpeechSynthesisUtterance(text);
       const lang = LANG === 'es' ? 'es-ES' : (/[áéíóúñ¿¡ü]/i.test(text) ? 'es-ES' : 'en-US');
-      u.lang = lang; u.rate = 1; u.pitch = 1.05; u.volume = 1;
-      const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().replace('_','-').startsWith(lang.slice(0,2)));
+      u.lang = lang; u.rate = 1; u.pitch = who === 'me' ? .9 : 1.1; u.volume = 1;
+      const vs = speechSynthesis.getVoices().filter(x => x.lang && x.lang.toLowerCase().replace('_','-').startsWith(lang.slice(0,2)));
+      const v = (who === 'me' && vs.length > 1) ? vs[1] : vs[0];   /* tu voz y la suya suenan distinto */
       if(v) u.voice = v;
       let started = false, rel = false;
       const release = () => { if(rel) return; rel = true; duck(false); };
@@ -1358,7 +1421,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         setTimeout(() => {
           if(!started && !speechSynthesis.speaking){
             release();
-            (S.ttsPending = S.ttsPending || []).push(text);
+            (S.ttsPending = S.ttsPending || []).push([text, who]);
           }
         }, 1800);
       };
@@ -1369,12 +1432,14 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   function flushTts(){
     if(!S.ttsPending || !S.ttsPending.length) return;
     const q = S.ttsPending.splice(0);
-    q.forEach(t => speak(t, true));
+    q.forEach(x => speak(x[0], true, x[1]));
   }
-  function chatRecv(text, tts, ai){ text = String(text).slice(0,300); if(tts && S.soundOn) S.speakUntil = performance.now() + Math.min(20000, 600 + text.length * 62); chatPush('them', text, false, ai); tone(660,.12,'triangle',.04); if(tts) speak(text); }
+  function chatRecv(text, tts, ai){ text = String(text).slice(0,300); tts = tts && TTSP.them; if(tts && S.soundOn) S.speakUntil = performance.now() + Math.min(20000, 600 + text.length * 62); chatPush('them', text, false, ai); tone(660,.12,'triangle',.04); if(tts) speak(text, false, 'them'); }
   function chatSend(text, ai, quick){
     text = text.trim().slice(0,300); if(!text) return;
+    if(quick) ST.me.skip = true;
     chatPush('me', text, false, ai);
+    if(TTSP.me && !quick){ if(S.soundOn) S.speakUntil = performance.now() + Math.min(20000, 600 + text.length * 62); speak(text, true, 'me'); }   /* quick = dictado por voz: ya lo has dicho tú */
     if(S.avatar) avatarTalk(text);
     doodleSend(text);
     if(S.waiting){
@@ -1804,6 +1869,19 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
     if(on && inCall()) aiKick(2000);
   }
   $('#aiBtn').addEventListener('click', () => aiSet(!AI.on));
+  function ttsUI(){
+    [['me', '#readMeBtn', 'Leer mis mensajes: '], ['them', '#readThBtn', 'Leer los suyos: ']].forEach(([k, id, lab]) => {
+      const b = $(id); b.setAttribute('aria-pressed', String(TTSP[k])); setT(b, lab + (TTSP[k] ? 'sí' : 'no'));
+    });
+  }
+  [['me', '#readMeBtn'], ['them', '#readThBtn']].forEach(([k, id]) => $(id).addEventListener('click', () => {
+    TTSP[k] = !TTSP[k];
+    try{ localStorage.setItem('chatapp:tts', JSON.stringify(TTSP)); }catch(e){}
+    ttsUI();
+    if(!TTSP[k]){ try{ speechSynthesis.cancel(); }catch(e){} }
+    else if(!S.soundOn) toast('Lectura activada, pero el sonido está desactivado · actívalo arriba');
+  }));
+  ttsUI();
 
   $('#avPauseBtn').addEventListener('click', () => avPauseSet(!SP.paused));
   /* ---------- Chat AI: la persona simulada es una IA que conversa sola, igual que el Modo IA ---------- */
@@ -1820,7 +1898,7 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
   /* Botón para pausar / reanudar la conversación del avatar IA (solo visible con «Chat AI») */
   function avPauseUI(){
     const b = $('#avPauseBtn'); if(!b) return;
-    b.classList.toggle('hide', !SP.on);
+    b.classList.toggle('hide', !SP.on); $('#aiStopBtn').classList.toggle('hide', !SP.on);
     b.setAttribute('aria-pressed', String(!!SP.paused));
     setT(b, SP.paused ? 'Reanudar avatar IA' : 'Pausar avatar IA');
   }
@@ -1840,7 +1918,7 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
     text = String(text).slice(0, 300);
     SP.hist.push(['assistant', text]); if(SP.hist.length > 30) SP.hist.shift(); SP.run++;
     RV.typeUntil = 0; RV.talkUntil = performance.now() + Math.min(20000, 600 + text.length * 62);   /* el avatar mueve la boca al hablar */
-    chatPush('them', text, false, true); tone(660,.12,'triangle',.04); speak(text);
+    chatPush('them', text, false, true); tone(660,.12,'triangle',.04); if(TTSP.them) speak(text, false, 'them');
     doodleSend(text);   /* la IA también dibuja su doodle */
     simNudge();
   }
@@ -1860,6 +1938,111 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
     if(AI.seq !== q){ simKick(600); return; }   /* llegó otro mensaje mientras pensaba */
     if(t){ const wait = Math.max(0, SP.minAt - performance.now()); if(wait) await new Promise(r => setTimeout(r, wait)); if(SP.on && !SP.paused && inCall() && AI.seq === q) simSay(t); else if(SP.on) simKick(600); }
   }
+
+  /* ---------- Contadores por participante: palabras y tiempo de habla ---------- */
+  const stMk = () => ({ w:0, ms:0, until:0, skip:false, talking:false, lastV:0, an:null, src:null, buf:null, key:'', sw:'', stt:'', sTalk:null });
+  const ST = { me:stMk(), them:stMk() };
+  const stWords = t => (String(t).match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) || []).length;
+  const stFmt = ms => { const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+  const stEls = { me:{ w:$('#stMeW'), t:$('#stMeT'), c:$('#stMeTc') }, them:{ w:$('#stThW'), t:$('#stThT'), c:$('#stThTc') } };
+  function stRender(){
+    for(const k of ['me', 'them']){
+      const o = ST[k], e = stEls[k], w = String(o.w), t = stFmt(o.ms);
+      if(o.sw !== w){ o.sw = w; e.w.textContent = w; }
+      if(o.stt !== t){ o.stt = t; e.t.textContent = t; }
+      if(o.sTalk !== o.talking){ o.sTalk = o.talking; e.c.classList.toggle('talk', o.talking); }
+    }
+  }
+  function stReset(){ for(const k of ['me', 'them']){ const o = ST[k]; o.w = 0; o.ms = 0; o.until = 0; o.skip = false; o.talking = false; o.lastV = 0; } stRender(); }
+  function stAnalyser(o, stream){
+    const tr = stream ? stream.getAudioTracks() : [], key = tr.map(t => t.id).join(',');
+    if(key === o.key) return;
+    try{ o.src && o.src.disconnect(); }catch(e){}
+    o.an = null; o.src = null; o.key = key;
+    if(!tr.length) return;
+    try{
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const a = ac.createAnalyser(); a.fftSize = 1024;
+      o.src = ac.createMediaStreamSource(new MediaStream(tr)); o.src.connect(a);
+      o.an = a; o.buf = new Float32Array(a.fftSize);
+    }catch(e){ o.an = null; }
+  }
+  function stLevel(o){
+    if(!o.an) return 0;
+    o.an.getFloatTimeDomainData(o.buf);
+    let s = 0; for(let i = 0; i < o.buf.length; i++) s += o.buf[i] * o.buf[i];
+    return Math.sqrt(s / o.buf.length);
+  }
+  let stLast = performance.now();
+  setInterval(() => {
+    const now = performance.now(), dt = Math.min(500, now - stLast); stLast = now;
+    const live = inCall() && (RT.started || SP.on);
+    stAnalyser(ST.me, S.stream);
+    stAnalyser(ST.them, RT.real && RT.started ? $('#remoteVid').srcObject : null);
+    if(S.micOn && stLevel(ST.me) > .012 && !(window.speechSynthesis && speechSynthesis.speaking)) ST.me.lastV = now;                 /* tú: micrófono */
+    if(RT.real && stLevel(ST.them) > .01) ST.them.lastV = now;           /* la otra persona: su audio real */
+    for(const k of ['me', 'them']){
+      const o = ST[k], t = live && (now - o.lastV < 400 || now < o.until);   /* voz real (0,4 s de margen) o mensaje escrito en curso */
+      if(t) o.ms += dt; o.talking = t;
+    }
+    stRender();
+  }, 100);
+
+  /* ---------- Resumen final: puntuación global + conclusión ---------- */
+  const SUM = { snap:null, open:false, reload:false };
+  function sumCalc(){
+    const m = ST.me, o = ST.them, el = Math.max(1, S.elapsed);
+    const wT = m.w + o.w, tT = m.ms + o.ms;
+    const wS = wT >= 4 ? m.w / wT * 100 : null, tS = tT >= 3000 ? m.ms / tT * 100 : null;
+    const sh = [wS, tS].filter(x => x != null);
+    const d = { el, mw:m.w, ow:o.w, mt:m.ms, ot:o.ms, wS, tS, share:null, bal:null, act:0, score:null };
+    const wpm = wT / (el / 60), cov = tT / (el * 1000);
+    d.act = Math.round(100 * Math.max(Math.min(1, wpm / 20), Math.min(1, cov / .5)));
+    if(sh.length){
+      d.share = sh.reduce((a, b) => a + b, 0) / sh.length;
+      d.bal = Math.round(sh.reduce((a, x) => a + (100 - 2 * Math.abs(x - 50)), 0) / sh.length);
+      d.score = Math.round(.65 * d.bal + .35 * d.act);
+    }
+    return d;
+  }
+  function sumInsight(d, L){
+    if(d.score == null) return L('No se ha detectado suficiente conversación para sacar conclusiones. Probad a hablar o escribir un poco más y verás el análisis.', 'Not enough conversation was detected to draw conclusions. Try talking or typing a bit more and you will get the analysis.');
+    const me = Math.round(d.share), th = 100 - me; let a;
+    if(d.share >= 65) a = L('Has llevado la voz cantante: el ' + me + '% de la conversación fue tuyo. Haz más preguntas abiertas para dar espacio a la otra persona.', 'You led the conversation: ' + me + '% of it was yours. Try more open questions to give the other person room.');
+    else if(d.share <= 35) a = L('La otra persona ha llevado la conversación (' + th + '%). Has escuchado mucho; contar un poco más de ti puede profundizar la charla.', 'The other person did most of the talking (' + th + '%). You listened a lot; sharing a bit more of yourself can deepen the chat.');
+    else a = L('Conversación muy equilibrada: ' + me + '% tú y ' + th + '% la otra persona. Es señal de interés mutuo.', 'Nicely balanced conversation: ' + me + '% you and ' + th + '% the other person. That is a sign of mutual interest.');
+    if(d.act < 35) a += L(' Fue una charla tranquila, con bastante silencio; una pregunta curiosa ayuda a arrancar.', ' It was a quiet chat with plenty of silence; a curious question helps get things going.');
+    else if(d.act >= 80) a += L(' Y con mucho ritmo: apenas hubo silencios.', ' And it had great pace: hardly any silences.');
+    return a;
+  }
+  function sumRender(){
+    const d = SUM.snap, box = $('#sumBody'); if(!d || !box) return;
+    const L = (es, en) => LANG === 'en' ? en : es;
+    const bands = [[85, 'Ritmo perfecto', 'Perfect rhythm', '🎯'], [70, 'Gran equilibrio', 'Great balance', '⚖️'], [50, 'Buena charla', 'Good flow', '💬'], [30, 'Charla desigual', 'One-sided chat', '↔️'], [0, 'Calentando motores', 'Just warming up', '🌱']];
+    const b = d.score == null ? null : bands.find(x => d.score >= x[0]);
+    const row = (label, a, c, share) => '<div class="sumrow"><div class="sumhead"><span>' + a + '</span><strong>' + label + '</strong><span>' + c + '</span></div><div class="sbar"><i class="a" style="width:' + (share == null ? 50 : share) + '%' + (share == null ? ';opacity:.25' : '') + '"></i><i class="b" style="width:' + (share == null ? 50 : 100 - share) + '%' + (share == null ? ';opacity:.25' : '') + '"></i></div></div>';
+    const bar = (label, v) => '<div class="crow"><span>' + label + '</span><div class="cbar"><i style="width:' + (v == null ? 0 : v) + '%"></i></div></div>';
+    box.innerHTML = '<h2 id="sumTitle">' + L('Resumen de la charla', 'Chat summary') + '</h2>' +
+      '<div class="gauge" style="--p:' + (d.score || 0) + '"><b>' + (d.score == null ? '–' : d.score) + '</b></div>' +
+      '<p class="ctitle">' + (b ? b[3] + ' ' + L(b[1], b[2]) : L('Sin datos suficientes', 'Not enough data')) + '</p>' +
+      '<div class="sumleg"><span class="a"><i></i>' + L('Tú', 'You') + '</span><span class="b"><i></i>' + L('Otra persona', 'Other person') + '</span></div>' +
+      row(L('Palabras', 'Words'), d.mw, d.ow, d.wS) + row(L('Tiempo hablando', 'Talk time'), stFmt(d.mt), stFmt(d.ot), d.tS) +
+      '<p class="hint" style="margin:-4px 0 12px">' + L('El tiempo hablando suma la voz detectada y lo que tardarías en decir cada mensaje escrito.', 'Talk time adds detected voice plus the time it would take to say each written message.') + '</p>' +
+      '<div class="cbars">' + bar(L('Equilibrio', 'Balance'), d.bal) + bar(L('Actividad', 'Activity'), d.act) + '</div>' +
+      '<div class="sinsight"><b>' + L('CONCLUSIÓN', 'INSIGHT') + '</b>' + sumInsight(d, L) + '</div>';
+  }
+  function sumShow(snap){
+    SUM.snap = snap; SUM.open = true; sumRender(); ovlOpen($('#sumOvl'));
+    try{ chimeEnd(); }catch(e){}
+  }
+  function sumClose(){
+    ovlClose($('#sumOvl')); SUM.open = false;
+    if(SUM.reload){ SUM.reload = false; location.href = 'https://easylandx.github.io/chatapp/'; }
+  }
+  $('#sumClose').addEventListener('click', sumClose);
+  $('#sumOk').addEventListener('click', sumClose);
+  $('#sumOvl').addEventListener('click', e => { if(e.target === $('#sumOvl')) sumClose(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && SUM.open) sumClose(); });
 
   /* ---------- Ventanas emergentes (ruleta y compatibilímetro) ---------- */
   const ovlOpen = o => { o.classList.add('open'); o.setAttribute('aria-hidden', 'false'); };
@@ -2337,6 +2520,22 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
   $('#cardSave').addEventListener('click', () => cardSave());
 
   /* ---------- Controles de llamada ---------- */
+  /* Detener Chat IA: la persona simulada se va y vuelves a la sala de espera (con resumen de la charla) */
+  $('#aiStopBtn').addEventListener('click', () => {
+    if(!SP.on) return;
+    rewait();
+    if(!RT.roomId){ $('#invite').classList.add('hide'); openRoom(); }
+    toast('Chat con IA detenido');
+  });
+  /* Terminar llamada: corta todo (llamada, IA, voz, cámara, juegos) y vuelve al inicio */
+  $('#endBtn').addEventListener('click', () => {
+    resetDisarm();
+    try{ vStop(); }catch(e){}
+    try{ aiSet(false, true); }catch(e){}
+    document.querySelectorAll(OVLS).forEach(ovlClose); telReset(); hsReset(); doodleClear();
+    if(S.waiting) cancelWaiting(); else endCall('early');
+    toast('Llamada terminada');
+  });
   /* Reiniciar: doble pulsación con confirmación «¿Seguro?» */
   let resetT;
   const resetDisarm = () => { const b = $('#resetBtn'); clearTimeout(resetT); b.removeAttribute('data-armed'); b.setAttribute('aria-pressed','false'); setT(b, 'Reiniciar'); };
@@ -2344,7 +2543,8 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
     const b = e.currentTarget;
     if(b.hasAttribute('data-armed')){ resetDisarm(); if(S.waiting) cancelWaiting(); else endCall('early');
       /* damos un instante para avisar a la otra persona y recargamos la página limpia */
-      setTimeout(() => { location.href = 'https://easylandx.github.io/chatapp/'; }, 300); return; }
+      if(SUM.open) SUM.reload = true; else setTimeout(() => { location.href = 'https://easylandx.github.io/chatapp/'; }, 300);
+      return; }
     b.setAttribute('data-armed','1'); b.setAttribute('aria-pressed','true'); setT(b, '¿Seguro?');
     resetT = setTimeout(resetDisarm, 3000);
   });
