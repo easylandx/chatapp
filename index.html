@@ -312,7 +312,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   <header class="top">
     <div class="brand">
       <div class="logo"><span class="appico" aria-hidden="true"></span>Chat<b>App</b><span class="cursor" aria-hidden="true"></span></div>
-      <span class="ver" id="appVer" data-noi18n title="Version">v8</span>
+      <span class="ver" id="appVer" data-noi18n title="Version">v11</span>
       <div class="time hide" id="time" role="timer" aria-live="off">00:00</div>
     </div>
     <button class="lang" id="langBtn" data-noi18n lang="en" type="button">English</button>
@@ -1159,7 +1159,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     else if(d.t === 'tel'){ telNet(d); }
     else if(d.t === 'hs'){ hsNet(d); }
     else if(d.t === 'doodle'){ doodleRecv(d); }
-    else if(d.t === 'chat' && typeof d.m === 'string'){ chatRecv(d.m, d.tts !== false, !!d.ai); }
+    else if(d.t === 'chat' && typeof d.m === 'string'){ chatRecv(d.m, d.tts !== false, !!d.ai, !!d.v); }
   }
   function gotCall(c){
     RT.call = c; RT.real = true; c.on('close', lost);
@@ -1187,7 +1187,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
       if(!st.getAudioTracks().length) toast('La otra persona no envía audio (sin micrófono)');
       chimeMatch(); startCall();
       const box = RT.outbox; RT.outbox = [];
-      box.forEach(m => { try{ RT.conn.send({ t:'chat', m, tts:true }); }catch(e){} });
+      box.forEach(x => { try{ RT.conn.send({ t:'chat', m:x.m, tts:true, v:x.v }); }catch(e){} });
     });
   }
   function dial(id){
@@ -1374,16 +1374,14 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   const RV = { talkUntil:0, typeUntil:0 };   /* estado del avatar remoto «Chat AI» */
   const SP = { on:false, busy:false, t:null, hist:[], persona:null, angle:null, run:0 };
   const AI = { on:false, busy:false, t:null, n:0, run:0, seq:0, hist:[], persona:null, angle:null };
-  function chatPush(cls, text, tr, ai){
+  function chatPush(cls, text, tr, ai, voice){
     const box = $('#msgs'), d = document.createElement('div'); d.className = 'msg ' + cls + (ai ? ' ai' : '');
     if(tr) setT(d, text); else { d.textContent = text; d.setAttribute('data-noi18n',''); }
     if(cls === 'me' || cls === 'them') d.dataset.src = text;
     box.appendChild(d); box.scrollTop = box.scrollHeight;
     if(cls === 'me' || cls === 'them'){ AI.seq++; AI.hist.push([cls === 'me' ? 'assistant' : 'user', text]); if(AI.hist.length > 30) AI.hist.shift(); }
     if(cls === 'me' || cls === 'them'){
-      const o = ST[cls], now = performance.now(); o.w += stWords(text);
-      /* un mensaje escrito cuenta como habla el tiempo que se tardaría en decirlo (igual para los dos lados); un dictado por voz ya se detectó en el micrófono */
-      if(o.skip) o.skip = false; else o.until = Math.max(now, o.until) + Math.min(20000, 400 + String(text).length * 75);
+      ST[cls].w += stWords(text);   /* palabras = todo lo que aparece en el chat, también lo dictado por voz */
       stRender();
     }
     if(cls === 'them') aiIncoming();
@@ -1443,18 +1441,17 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     const q = S.ttsPending.splice(0);
     q.forEach(x => speak(x[0], true, x[1]));
   }
-  function chatRecv(text, tts, ai){ text = String(text).slice(0,300); tts = tts && TTSP.them; if(tts && S.soundOn) S.speakUntil = performance.now() + Math.min(20000, 600 + text.length * 62); chatPush('them', text, false, ai); tone(660,.12,'triangle',.04); if(tts) speak(text, false, 'them'); }
+  function chatRecv(text, tts, ai, voice){ text = String(text).slice(0,300); tts = tts && TTSP.them; if(tts && S.soundOn) S.speakUntil = performance.now() + Math.min(20000, 600 + text.length * 62); chatPush('them', text, false, ai, voice); tone(660,.12,'triangle',.04); if(tts) speak(text, false, 'them'); }
   function chatSend(text, ai, quick){
     text = text.trim().slice(0,300); if(!text) return;
-    if(quick) ST.me.skip = true;
-    chatPush('me', text, false, ai);
+    chatPush('me', text, false, ai, !!quick);
     if(TTSP.me && !quick){ if(S.soundOn) S.speakUntil = performance.now() + Math.min(20000, 600 + text.length * 62); speak(text, true, 'me'); }   /* quick = dictado por voz: ya lo has dicho tú */
     if(S.avatar) avatarTalk(text);
     doodleSend(text);
     if(S.waiting){
-      RT.outbox.push(text);   /* se entrega cuando alguien se una */
+      RT.outbox.push({ m:text, v:!!quick });   /* se entrega cuando alguien se una */
     } else if(RT.real){
-      try{ RT.conn.send({ t:'chat', m:text, tts:true, ai:!!ai }); }catch(e){ toast('No se pudo enviar el mensaje'); }
+      try{ RT.conn.send({ t:'chat', m:text, tts:true, ai:!!ai, v:!!quick }); }catch(e){ toast('No se pudo enviar el mensaje'); }
     } else if(SP.on){
       SP.hist.push(['user', text]); if(SP.hist.length > 30) SP.hist.shift(); SP.run = 0;
       simKick(quick ? 900 + Math.random() * 300 : 2900 + Math.random() * 500);
@@ -1949,7 +1946,7 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
   }
 
   /* ---------- Contadores por participante: palabras y tiempo de habla ---------- */
-  const stMk = () => ({ w:0, ms:0, until:0, skip:false, talking:false, lastV:0, an:null, src:null, buf:null, key:'', sw:'', stt:'', sTalk:null });
+  const stMk = () => ({ w:0, ms:0, talking:false, lastV:0, an:null, src:null, buf:null, key:'', sw:'', stt:'', sTalk:null });
   const ST = { me:stMk(), them:stMk() };
   const stWords = t => (String(t).match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) || []).length;
   const stFmt = ms => { const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
@@ -1962,7 +1959,7 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
       if(o.sTalk !== o.talking){ o.sTalk = o.talking; e.c.classList.toggle('talk', o.talking); }
     }
   }
-  function stReset(){ for(const k of ['me', 'them']){ const o = ST[k]; o.w = 0; o.ms = 0; o.until = 0; o.skip = false; o.talking = false; o.lastV = 0; } stRender(); }
+  function stReset(){ for(const k of ['me', 'them']){ const o = ST[k]; o.w = 0; o.ms = 0; o.talking = false; o.lastV = 0; } stRender(); }
   function stAnalyser(o, stream){
     const tr = stream ? stream.getAudioTracks() : [], key = tr.map(t => t.id).join(',');
     if(key === o.key) return;
@@ -1990,8 +1987,9 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
     stAnalyser(ST.them, RT.real && RT.started ? $('#remoteVid').srcObject : null);
     if(S.micOn && stLevel(ST.me) > .012 && !(window.speechSynthesis && speechSynthesis.speaking)) ST.me.lastV = now;                 /* tú: micrófono */
     if(RT.real && stLevel(ST.them) > .01) ST.them.lastV = now;           /* la otra persona: su audio real */
+    if(SP.on && now < RV.talkUntil) ST.them.lastV = now;                  /* persona simulada «Chat AI»: mientras su avatar habla */
     for(const k of ['me', 'them']){
-      const o = ST[k], t = live && (now - o.lastV < 400 || now < o.until);   /* voz real (0,4 s de margen) o mensaje escrito en curso */
+      const o = ST[k], t = live && now - o.lastV < 400;   /* solo voz (0,4 s de margen entre palabras) */
       if(t) o.ms += dt; o.talking = t;
     }
     stRender();
@@ -2004,7 +2002,7 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
     const wT = m.w + o.w, tT = m.ms + o.ms;
     const wS = wT >= 4 ? m.w / wT * 100 : null, tS = tT >= 3000 ? m.ms / tT * 100 : null;
     const sh = [wS, tS].filter(x => x != null);
-    const d = { el, mw:m.w, ow:o.w, mt:m.ms, ot:o.ms, wS, tS, share:null, bal:null, act:0, score:null };
+    const d = { el, mw:m.w, ow:o.w, mt:m.ms, ot:o.ms, wS, tS, wP: wT > 0 ? Math.round(m.w / wT * 100) : null, tP: tT > 0 ? Math.round(m.ms / tT * 100) : null, share:null, bal:null, act:0, score:null };
     const wpm = wT / (el / 60), cov = tT / (el * 1000);
     d.act = Math.round(100 * Math.max(Math.min(1, wpm / 20), Math.min(1, cov / .5)));
     if(sh.length){
@@ -2016,12 +2014,34 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
   }
   function sumInsight(d, L){
     if(d.score == null) return L('No se ha detectado suficiente conversación para sacar conclusiones. Probad a hablar o escribir un poco más y verás el análisis.', 'Not enough conversation was detected to draw conclusions. Try talking or typing a bit more and you will get the analysis.');
-    const me = Math.round(d.share), th = 100 - me; let a;
-    if(d.share >= 65) a = L('Has llevado la voz cantante: el ' + me + '% de la conversación fue tuyo. Haz más preguntas abiertas para dar espacio a la otra persona.', 'You led the conversation: ' + me + '% of it was yours. Try more open questions to give the other person room.');
-    else if(d.share <= 35) a = L('La otra persona ha llevado la conversación (' + th + '%). Has escuchado mucho; contar un poco más de ti puede profundizar la charla.', 'The other person did most of the talking (' + th + '%). You listened a lot; sharing a bit more of yourself can deepen the chat.');
-    else a = L('Conversación muy equilibrada: ' + me + '% tú y ' + th + '% la otra persona. Es señal de interés mutuo.', 'Nicely balanced conversation: ' + me + '% you and ' + th + '% the other person. That is a sign of mutual interest.');
+    const cls = x => x == null ? null : x >= 60 ? 'me' : x <= 40 ? 'th' : 'bal';
+    const mW = d.wS == null ? null : Math.round(d.wS), mT = d.tS == null ? null : Math.round(d.tS);
+    const cW = cls(d.wS), cT = cls(d.tS);
+    const desc = (m, c) => c === 'me' ? L('tú aportaste más (' + m + '% frente a ' + (100 - m) + '%)', 'you contributed more (' + m + '% vs ' + (100 - m) + '%)')
+      : c === 'th' ? L('la otra persona aportó más (' + (100 - m) + '% frente a ' + m + '%)', 'the other person contributed more (' + (100 - m) + '% vs ' + m + '%)')
+      : L('estuvo repartido (' + m + '% tú, ' + (100 - m) + '% la otra persona)', 'it was shared (' + m + '% you, ' + (100 - m) + '% the other person)');
+    let a;
+    if(cW && cT){
+      if(cW === cT){
+        if(cW === 'bal') a = L('Conversación equilibrada: tú aportaste el ' + mW + '% de las palabras del chat y el ' + mT + '% del tiempo hablado; la otra persona, el ' + (100 - mW) + '% y el ' + (100 - mT) + '%. Es señal de interés mutuo.',
+          'Balanced conversation: you contributed ' + mW + '% of the chat words and ' + mT + '% of the talk time; the other person ' + (100 - mW) + '% and ' + (100 - mT) + '%. That is a sign of mutual interest.');
+        else if(cW === 'me') a = L('Has llevado la conversación: el ' + mW + '% de las palabras del chat y el ' + mT + '% del tiempo hablado fueron tuyos. Haz más preguntas abiertas para dar espacio a la otra persona.',
+          'You led the conversation: ' + mW + '% of the chat words and ' + mT + '% of the talk time were yours. Try more open questions to give the other person room.');
+        else a = L('La otra persona ha llevado la conversación: aportó el ' + (100 - mW) + '% de las palabras del chat y el ' + (100 - mT) + '% del tiempo hablado. Has escuchado mucho; contar un poco más de ti puede profundizar la charla.',
+          'The other person led the conversation: ' + (100 - mW) + '% of the chat words and ' + (100 - mT) + '% of the talk time. You listened a lot; sharing a bit more of yourself can deepen the chat.');
+      } else {
+        /* palabras y tiempo cuentan historias distintas: se explican por separado, sin promediarlas */
+        a = L('El chat y la voz no cuentan lo mismo. En palabras del chat, ' + desc(mW, cW) + '; hablando, ' + desc(mT, cT) + '.',
+          'Chat and voice tell different stories. In chat words, ' + desc(mW, cW) + '; in talk time, ' + desc(mT, cT) + '.');
+      }
+    } else {
+      const m = cW ? mW : mT, c = cW || cT, dim = cW ? L('palabras', 'words') : L('tiempo hablado', 'talk time');
+      if(c === 'bal') a = L('Conversación equilibrada en ' + dim + ': ' + m + '% tú y ' + (100 - m) + '% la otra persona.', 'Balanced in ' + dim + ': ' + m + '% you and ' + (100 - m) + '% the other person.');
+      else if(c === 'me') a = L('Has llevado la conversación en ' + dim + ': el ' + m + '% fue tuyo. Haz más preguntas abiertas para dar espacio a la otra persona.', 'You led in ' + dim + ': ' + m + '% was yours. Try more open questions to give the other person room.');
+      else a = L('La otra persona ha llevado la conversación en ' + dim + ' (' + (100 - m) + '%). Contar un poco más de ti puede profundizar la charla.', 'The other person led in ' + dim + ' (' + (100 - m) + '%). Sharing a bit more of yourself can deepen the chat.');
+    }
     if(d.act < 35) a += L(' Fue una charla tranquila, con bastante silencio; una pregunta curiosa ayuda a arrancar.', ' It was a quiet chat with plenty of silence; a curious question helps get things going.');
-    else if(d.act >= 80) a += L(' Y con mucho ritmo: apenas hubo silencios.', ' And it had great pace: hardly any silences.');
+    else if(d.act >= 80) a += L(' En conjunto, la charla fue muy activa: apenas hubo silencios.', ' Overall the chat was very active: hardly any silences.');
     return a;
   }
   function sumRender(){
@@ -2029,14 +2049,14 @@ function dword(txt){const w=txt.match(/[A-Za-zÀ-ÿñÑ]+/g)||[];for(const M of[
     const L = (es, en) => LANG === 'en' ? en : es;
     const bands = [[85, 'Ritmo perfecto', 'Perfect rhythm', '🎯'], [70, 'Gran equilibrio', 'Great balance', '⚖️'], [50, 'Buena charla', 'Good flow', '💬'], [30, 'Charla desigual', 'One-sided chat', '↔️'], [0, 'Calentando motores', 'Just warming up', '🌱']];
     const b = d.score == null ? null : bands.find(x => d.score >= x[0]);
-    const row = (label, a, c, share) => '<div class="sumrow"><div class="sumhead"><span>' + a + '</span><strong>' + label + '</strong><span>' + c + '</span></div><div class="sbar"><i class="a" style="width:' + (share == null ? 50 : share) + '%' + (share == null ? ';opacity:.25' : '') + '"></i><i class="b" style="width:' + (share == null ? 50 : 100 - share) + '%' + (share == null ? ';opacity:.25' : '') + '"></i></div></div>';
+    const row = (label, a, c, p) => '<div class="sumrow"><div class="sumhead"><span>' + a + (p == null ? '' : ' · ' + p + '%') + '</span><strong>' + label + '</strong><span>' + c + (p == null ? '' : ' · ' + (100 - p) + '%') + '</span></div><div class="sbar"><i class="a" style="width:' + (p == null ? 50 : p) + '%' + (p == null ? ';opacity:.25' : '') + '"></i><i class="b" style="width:' + (p == null ? 50 : 100 - p) + '%' + (p == null ? ';opacity:.25' : '') + '"></i></div></div>';
     const bar = (label, v) => '<div class="crow"><span>' + label + '</span><div class="cbar"><i style="width:' + (v == null ? 0 : v) + '%"></i></div></div>';
     box.innerHTML = '<h2 id="sumTitle">' + L('Resumen de la charla', 'Chat summary') + '</h2>' +
       '<div class="gauge" style="--p:' + (d.score || 0) + '"><b>' + (d.score == null ? '–' : d.score) + '</b></div>' +
       '<p class="ctitle">' + (b ? b[3] + ' ' + L(b[1], b[2]) : L('Sin datos suficientes', 'Not enough data')) + '</p>' +
       '<div class="sumleg"><span class="a"><i></i>' + L('Tú', 'You') + '</span><span class="b"><i></i>' + L('Otra persona', 'Other person') + '</span></div>' +
-      row(L('Palabras', 'Words'), d.mw, d.ow, d.wS) + row(L('Tiempo hablando', 'Talk time'), stFmt(d.mt), stFmt(d.ot), d.tS) +
-      '<p class="hint" style="margin:-4px 0 12px">' + L('El tiempo hablando suma la voz detectada y lo que tardarías en decir cada mensaje escrito.', 'Talk time adds detected voice plus the time it would take to say each written message.') + '</p>' +
+      row(L('Palabras', 'Words'), d.mw, d.ow, d.wP) + row(L('Tiempo hablando', 'Talk time'), stFmt(d.mt), stFmt(d.ot), d.tP) +
+      '<p class="hint" style="margin:-4px 0 12px">' + L('Las palabras cuentan los mensajes del chat (también los dictados por voz); el tiempo hablando mide solo la voz.', 'Words count chat messages (voice-dictated ones too); talk time measures voice only.') + '</p>' +
       '<div class="cbars">' + bar(L('Equilibrio', 'Balance'), d.bal) + bar(L('Actividad', 'Activity'), d.act) + '</div>' +
       '<div class="sinsight"><b>' + L('CONCLUSIÓN', 'INSIGHT') + '</b>' + sumInsight(d, L) + '</div>';
   }
