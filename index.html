@@ -387,6 +387,8 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
         <button class="ctl" id="pianoBtn" type="button">Dúo musical</button>
         <button class="ctl" id="cardBtn" type="button">Postal de recuerdo</button>
         <button class="ctl" id="shakeBtn" type="button">Apretón de manos digital</button>
+        <button class="ctl" id="chatTxtBtn" type="button" data-es="Guardar chat (.txt)" title="Guarda toda la conversación en un archivo de texto">Guardar chat (.txt)</button>
+        <button class="ctl wa" id="chatWaBtn" type="button" data-es="Chat por WhatsApp" title="Envía toda la conversación por WhatsApp">Chat por WhatsApp</button>
         <button class="ctl end" id="endBtn" type="button" data-es="Terminar llamada">Terminar llamada</button>
         <button class="ctl quiet" id="resetBtn" type="button" data-es="Reiniciar">Reiniciar</button>
       </div>
@@ -756,6 +758,10 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     "Palabras de la otra persona": "Other person\u2019s words", "Tiempo hablando de la otra persona": "Other person\u2019s talk time",
     "Tus palabras": "Your words", "Tu tiempo hablando": "Your talk time",
     "Contadores de palabras y tiempo de habla": "Word and talk-time counters", "Resumen final con puntuación": "End-of-chat score and insight",
+    "Guardar chat (.txt)": "Save chat (.txt)", "Chat por WhatsApp": "Chat via WhatsApp",
+    "Guarda toda la conversación en un archivo de texto": "Saves the whole conversation to a text file", "Envía toda la conversación por WhatsApp": "Sends the whole conversation via WhatsApp",
+    "Aún no hay mensajes en el chat": "There are no messages in the chat yet", "Chat guardado en un archivo .txt": "Chat saved as a .txt file",
+    "Chat guardado · adjúntalo en WhatsApp": "Chat saved · attach it in WhatsApp", "Chat largo: se envían los últimos mensajes; el archivo .txt tiene todo": "Long chat: the latest messages are sent; the .txt file has everything",
   };
   const T = s => (LANG === 'en' && Object.prototype.hasOwnProperty.call(EN, s)) ? EN[s] : s;
   const setT = (el, es) => { el.dataset.es = es; el.textContent = T(es); };
@@ -1378,7 +1384,7 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
   function chatPush(cls, text, tr, ai, voice){
     const box = $('#msgs'), d = document.createElement('div'); d.className = 'msg ' + cls + (ai ? ' ai' : '');
     if(tr) setT(d, text); else { d.textContent = text; d.setAttribute('data-noi18n',''); }
-    if(cls === 'me' || cls === 'them') d.dataset.src = text;
+    if(cls === 'me' || cls === 'them'){ d.dataset.src = text; d.dataset.t = Date.now(); }
     box.appendChild(d); box.scrollTop = box.scrollHeight;
     if(cls === 'me' || cls === 'them'){ AI.seq++; AI.hist.push([cls === 'me' ? 'assistant' : 'user', text]); if(AI.hist.length > 30) AI.hist.shift(); }
     if(cls === 'me' || cls === 'them'){
@@ -1394,6 +1400,51 @@ h1 .appico{width:.95em;height:.95em;vertical-align:-.1em;margin-right:.22em}
     doodleClear(); stReset();
     $('#msgs').innerHTML = '';
   }
+  /* ---------- Guardar el chat en .txt y enviarlo por WhatsApp ---------- */
+  function chatExport(){
+    const Lx = (es, en) => LANG === 'en' ? en : es;
+    const els = [...document.querySelectorAll('#msgs .msg')].filter(e => e.dataset.src);
+    if(!els.length) return null;
+    const meN = Lx('Tú', 'You'), thN = SP.on ? Lx('Persona simulada (IA)', 'Simulated person (AI)') : Lx('Otra persona', 'Other person');
+    const pad = n => String(n).padStart(2, '0'), now = new Date();
+    const stamp = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+    const lines = els.map(e => {
+      const d = new Date(+e.dataset.t || Date.now());
+      return '[' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + '] ' + (e.classList.contains('me') ? meN : thN) + ': ' + e.dataset.src;
+    });
+    const head = Lx('Chat de ChatApp', 'ChatApp chat') + ' · ' + stamp + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + '\n' + 'https://easylandx.github.io/chatapp/' + '\n\n';
+    return { head, lines, text: head + lines.join('\n') + '\n', name: 'chatapp-chat-' + stamp + '-' + pad(now.getHours()) + pad(now.getMinutes()) + '.txt' };
+  }
+  function chatSaveTxt(quiet){
+    const c = chatExport(); if(!c){ toast('Aún no hay mensajes en el chat'); return null; }
+    const blob = new Blob([c.text], { type:'text/plain;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = c.name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    if(!quiet) toast('Chat guardado en un archivo .txt');
+    return { c, blob };
+  }
+  function chatSendWa(){
+    const c = chatExport(); if(!c){ toast('Aún no hay mensajes en el chat'); return; }
+    const blob = new Blob([c.text], { type:'text/plain;charset=utf-8' });
+    /* móvil: la hoja de compartir lleva el .txt adjunto directo a WhatsApp */
+    try{
+      const file = new File([blob], c.name, { type:'text/plain' });
+      if(IS_TOUCH && navigator.canShare && navigator.canShare({ files:[file] })){ navigator.share({ files:[file], title:c.name }).catch(() => {}); return; }
+    }catch(e){}
+    /* resto: texto directo en WhatsApp (los últimos mensajes si es muy largo) y copia completa en .txt */
+    const MAX = 3000; let body = c.text, cut = false;
+    if(body.length > MAX){
+      cut = true; const keep = []; let n = c.head.length;
+      for(let i = c.lines.length - 1; i >= 0; i--){ n += c.lines[i].length + 1; if(n > MAX) break; keep.unshift(c.lines[i]); }
+      body = c.head + '[…]\n' + keep.join('\n');
+    }
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent), q = encodeURIComponent(body);
+    const url = mobile ? 'whatsapp://send?text=' + q : 'https://web.whatsapp.com/send?text=' + q;
+    if(cut){ chatSaveTxt(true); toast('Chat largo: se envían los últimos mensajes; el archivo .txt tiene todo', 6000); }
+    if(mobile) location.href = url; else window.open(url, '_blank', 'noopener');
+  }
+  $('#chatTxtBtn').addEventListener('click', () => chatSaveTxt());
+  $('#chatWaBtn').addEventListener('click', chatSendWa);
   function keepU(u){ (window._utts = window._utts || []).push(u); if(window._utts.length > 20) window._utts.shift(); }  /* evita que iOS/Chrome descarten la locución */
   /* iOS apaga o atenúa la voz del sistema mientras el micrófono está capturando.
      Solución: silenciar el micrófono SOLO mientras suena la voz del chat y devolverlo después. */
